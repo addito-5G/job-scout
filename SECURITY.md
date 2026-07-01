@@ -19,6 +19,14 @@ git diff --cached
 rg -i "gsk_|sk-|api_key|password|BEGIN PRIVATE" --glob '!venv/**' --glob '!.git/**'
 ```
 
+## GitHub CLI
+
+Local token for `gh` is stored at `~/.config/gh/token` (not in this repo). Setup once:
+
+```bash
+bash scripts/setup_github_auth.sh
+```
+
 ## Responsible use
 
 Job Scout is a personal pet project. Respect the terms of service of job boards (hh.ru, Habr Career, Geekjob). Use reasonable request rates; the project is not intended for commercial scraping at scale.
