@@ -1,0 +1,45 @@
+# Браузер для обогащения (полное описание вакансий)
+browser:
+  engine: auto          # auto | camoufox | drission | requests
+  headless: true
+  use_for_scan: true    # DrissionPage для парсинга
+  delay_seconds: 2
+  enrich_limit: 30
+
+sources:
+  habr_parser:
+    enabled: true
+    pages_per_query: 1
+    delay_seconds: 2
+    queries:
+      - product manager
+      - продакт
+
+  geekjob_parser:
+    enabled: true
+    pages_per_query: 1
+    delay_seconds: 2
+    queries:
+      - product manager
+      - продакт
+
+  habr_rss:
+    enabled: false
+    url: "https://career.habr.com/vacancies/rss"
+
+  hh_parser:
+    enabled: true
+    pages_per_query: 2
+    delay_seconds: 2
+    queries:
+      - text: "product manager"
+        area: 1
+        search_field: name
+      - text: "продакт менеджер"
+        area: 1
+
+  hh_api:
+    enabled: false
+
+  manual:
+    enabled: true

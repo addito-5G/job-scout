@@ -1,0 +1,39 @@
+# Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Secrets — never commit
+.env
+.env.*
+!.env.example
+yandex_key.json
+*.pem
+*credentials*
+
+# Local data & logs
+data/vacancies.db
+data/*.db
+data/*.db.*
+data/cron.log
+data/dashboard.json
+data/applications.json
+data/resumes/
+!data/.gitkeep
+
+# Machine-specific browser config
+browser_config.json
+
+# Streamlit / OS
+.streamlit/
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp

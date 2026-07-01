@@ -1,0 +1,4 @@
+enabled: true
+scan_time: 09:00
+timezone: Europe/Moscow
+match_limit: 50

@@ -1,0 +1,14 @@
+{
+  "browser_type": "chromium",
+  "browser_path": "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+  "headless": false,
+  "arguments": [
+    "--disable-blink-features=AutomationControlled",
+    "--no-sandbox",
+    "--disable-dev-shm-usage"
+  ],
+  "preferences": {
+    "credentials_enable_service": false,
+    "profile.password_manager_enabled": false
+  }
+}

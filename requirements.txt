@@ -1,0 +1,19 @@
+# Core
+feedparser>=6.0
+requests>=2.31
+pyyaml>=6.0
+python-dotenv>=1.0
+
+# Database & validation
+sqlalchemy>=2.0
+pydantic>=2.5
+
+# AI providers
+ollama>=0.4
+groq>=0.9
+PyJWT>=2.8
+cryptography>=42.0
+
+# UI
+streamlit>=1.32
+plotly>=5.18

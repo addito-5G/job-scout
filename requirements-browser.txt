@@ -1,0 +1,6 @@
+# Опционально: для обогащения вакансий через браузер
+# pip install -r requirements-browser.txt
+# python -m camoufox fetch   # скачать Firefox для Camoufox
+
+camoufox>=0.4
+DrissionPage>=4.0

@@ -1,0 +1,33 @@
+from db.models import (
+    AICache,
+    AIUsageLog,
+    Base,
+    CandidateProfile,
+    DailyMetrics,
+    ScanRun,
+    SearchSettings,
+    Vacancy,
+    VacancyMatch,
+    get_engine,
+    get_session,
+    get_session_factory,
+    init_db,
+    resolve_database_url,
+)
+
+__all__ = [
+    "AICache",
+    "AIUsageLog",
+    "Base",
+    "CandidateProfile",
+    "DailyMetrics",
+    "ScanRun",
+    "SearchSettings",
+    "Vacancy",
+    "VacancyMatch",
+    "get_engine",
+    "get_session",
+    "get_session_factory",
+    "init_db",
+    "resolve_database_url",
+]
