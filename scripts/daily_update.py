@@ -90,25 +90,29 @@ def main() -> None:
             print(f"⚠ enrich failed: {exc}")
 
     print("\n=== Analytics ===")
-    analytics = build_analytics(session, criteria)
-    snapshot = snapshot_for_today(analytics)
-    save_daily_metrics(session, date.today().isoformat(), snapshot)
+    try:
+        analytics = build_analytics(session, criteria)
+        snapshot = snapshot_for_today(analytics)
+        save_daily_metrics(session, date.today().isoformat(), snapshot)
 
-    export_path = ROOT / "data" / "dashboard.json"
-    export_path.parent.mkdir(parents=True, exist_ok=True)
-    export_path.write_text(json.dumps(analytics, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"Экспорт: {export_path}")
+        export_path = ROOT / "data" / "dashboard.json"
+        export_path.parent.mkdir(parents=True, exist_ok=True)
+        export_path.write_text(json.dumps(analytics, ensure_ascii=False, indent=2), encoding="utf-8")
+        print(f"Экспорт: {export_path}")
+    except Exception as exc:
+        errors.append(f"analytics: {exc}")
+        print(f"⚠ analytics failed: {exc}")
 
     session.close()
 
     print(
-        f"\nГотово: {analytics['summary']['total']} вакансий в базе, "
-        f"собрано {scraped}, матчинг {matched}, обогащено {enriched}"
+        f"\nГотово: собрано {scraped}, матчинг {matched}, обогащено {enriched}"
     )
     if errors:
         print("Ошибки:")
         for err in errors[:5]:
             print(f"  - {err}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

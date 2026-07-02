@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import json
 
-from sqlalchemy import case, func, select, text
+from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
-from db.models import Vacancy
+from db.models import DailyMetrics, Vacancy
+from services.vacancy_service import count_new_vacancies
 
 
 def vacancy_stats(session: Session) -> dict:
@@ -25,7 +26,7 @@ def vacancy_stats(session: Session) -> dict:
                     else_=0,
                 )
             ).label("enriched"),
-        )
+        ).where(Vacancy.is_active.is_(True))
     ).one()
     return {
         "total": row.total or 0,
@@ -37,51 +38,57 @@ def vacancy_stats(session: Session) -> dict:
     }
 
 
+def _metrics_row_to_dict(row: DailyMetrics) -> dict:
+    return {
+        "metric_date": row.metric_date,
+        "total_vacancies": row.total_vacancies,
+        "fit_count": row.fit_count,
+        "not_fit_count": row.not_fit_count,
+        "avg_score": row.avg_match_score,
+        "median_salary": row.median_salary_all,
+        "payload": row.payload,
+    }
+
+
 def save_daily_metrics(session: Session, metric_date: str, payload: dict) -> None:
     summary = payload.get("summary", payload)
-    session.execute(
-        text(
-            """
-            INSERT INTO daily_metrics (
-                metric_date, total_vacancies, fit_count, not_fit_count,
-                avg_score, median_salary, top_skills, payload
-            ) VALUES (:metric_date, :total, :fit, :not_fit, :avg_score, :median_salary, :top_skills, :payload)
-            ON CONFLICT(metric_date) DO UPDATE SET
-                total_vacancies = excluded.total_vacancies,
-                fit_count = excluded.fit_count,
-                not_fit_count = excluded.not_fit_count,
-                avg_score = excluded.avg_score,
-                median_salary = excluded.median_salary,
-                top_skills = excluded.top_skills,
-                payload = excluded.payload,
-                created_at = CURRENT_TIMESTAMP
-            """
+    top_skills = payload.get("top_skills", [])
+    if top_skills and isinstance(top_skills[0], (list, tuple)):
+        top_skills = top_skills[:10]
+
+    row = session.execute(
+        select(DailyMetrics).where(DailyMetrics.metric_date == metric_date)
+    ).scalar_one_or_none()
+
+    fields = {
+        "metric_date": metric_date,
+        "total_vacancies": int(summary.get("total", payload.get("total_vacancies", 0)) or 0),
+        "new_7d": count_new_vacancies(session, 7),
+        "new_30d": count_new_vacancies(session, 30),
+        "fit_count": int(summary.get("fit", payload.get("fit_count", 0)) or 0),
+        "not_fit_count": int(
+            (summary.get("not_fit", 0) or 0) + (summary.get("maybe", 0) or 0)
+            or payload.get("not_fit_count", 0)
+            or 0
         ),
-        {
-            "metric_date": metric_date,
-            "total": summary.get("total", payload.get("total_vacancies", 0)),
-            "fit": summary.get("fit", payload.get("fit_count", 0)),
-            "not_fit": summary.get("not_fit", payload.get("not_fit_count", 0)),
-            "avg_score": summary.get("avg_score", payload.get("avg_score")),
-            "median_salary": summary.get("median_salary", payload.get("median_salary")),
-            "top_skills": json.dumps(payload.get("top_skills", []), ensure_ascii=False),
-            "payload": json.dumps(payload, ensure_ascii=False),
-        },
-    )
+        "avg_match_score": summary.get("avg_score", payload.get("avg_score")),
+        "median_salary_all": summary.get("median_salary", payload.get("median_salary")),
+        "median_salary_fit": payload.get("median_salary_fit"),
+        "top_skills": json.dumps(top_skills, ensure_ascii=False),
+        "payload": json.dumps(payload, ensure_ascii=False),
+    }
+
+    if row:
+        for key, value in fields.items():
+            if key != "metric_date":
+                setattr(row, key, value)
+    else:
+        session.add(DailyMetrics(**fields))
     session.commit()
 
 
 def get_daily_metrics(session: Session, limit: int = 30) -> list[dict]:
     rows = session.execute(
-        text(
-            """
-            SELECT metric_date, total_vacancies, fit_count, not_fit_count,
-                   avg_score, median_salary, payload
-            FROM daily_metrics
-            ORDER BY metric_date DESC
-            LIMIT :limit
-            """
-        ),
-        {"limit": limit},
-    ).mappings()
-    return [dict(r) for r in rows]
+        select(DailyMetrics).order_by(DailyMetrics.metric_date.desc()).limit(limit)
+    ).scalars().all()
+    return [_metrics_row_to_dict(row) for row in rows]
