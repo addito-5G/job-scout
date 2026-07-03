@@ -85,12 +85,32 @@ class AIRouter:
                 DEEP_MATCH_SYSTEM,
             )
         if task_type == "generate_cover_letter":
-            from ai.prompts.cover_letter import COVER_LETTER_PROMPT, COVER_LETTER_SYSTEM
+            import json
 
+            from ai.prompts.cover_letter import (
+                COVER_LETTER_EXAMPLE,
+                COVER_LETTER_SYSTEM,
+                ROLE_SKILL_GUIDANCE,
+                TARGET_ROLE_LABELS,
+                format_cover_letter_prompt,
+            )
+
+            target_role = payload.get("target_role", "general")
+            profile_data = json.loads(payload.get("profile_json", "{}"))
             return (
-                COVER_LETTER_PROMPT.format(
+                format_cover_letter_prompt(
+                    example=COVER_LETTER_EXAMPLE,
+                    target_role_label=TARGET_ROLE_LABELS.get(
+                        target_role, TARGET_ROLE_LABELS["general"]
+                    ),
+                    role_guidance=ROLE_SKILL_GUIDANCE.get(
+                        target_role, ROLE_SKILL_GUIDANCE["general"]
+                    ),
+                    candidate_first_name=profile_data.get("first_name", "кандидат"),
+                    candidate_role_title=profile_data.get("role_title", "специалист"),
                     profile_json=payload.get("profile_json", "{}"),
                     vacancy_json=payload.get("vacancy_json", "{}"),
+                    match_context_json=payload.get("match_context_json", "{}"),
                 ),
                 COVER_LETTER_SYSTEM,
             )

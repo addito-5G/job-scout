@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Job Scout — Streamlit UI."""
+"""NextMove — AI Career Copilot (Streamlit UI)."""
 
 from __future__ import annotations
 
@@ -15,24 +15,30 @@ sys.path.insert(0, str(ROOT))
 from db import get_session, init_db
 from services.profile_service import get_latest_profile
 from services.search_service import get_active_search_settings
-from ui.dashboard_page import render_dashboard
+from ui.applications_page import render_applications
+from ui.brand import PRODUCT_NAME, PRODUCT_TAGLINE
+from ui.design_system import inject_design_system
 from ui.detail_page import render_detail
 from ui.extract_progress import run_extract_with_progress
+from ui.market_insights_page import render_market_insights
 from ui.navigation import render_app_sidebar, render_setup_sidebar
 from ui.onboarding_page import render_onboarding
+from ui.opportunities_page import render_opportunities
 from ui.parse_progress import run_parse_with_progress
 from ui.parse_setup_page import render_keywords_step
 from ui.resume_advice_page import render_resume_advice
-from ui.vacancies_page import render_vacancies
+from ui.today_page import render_today
 from ui.workflow import render_stepper, resolve_initial_stage
 
 
 st.set_page_config(
-    page_title="Job Scout",
-    page_icon="🔎",
+    page_title=PRODUCT_NAME,
+    page_icon="◆",
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+inject_design_system()
 
 
 def _bootstrap() -> tuple[bool, bool]:
@@ -50,7 +56,7 @@ def _bootstrap() -> tuple[bool, bool]:
 
 
 def main() -> None:
-    st.session_state.setdefault("view", "dashboard")
+    st.session_state.setdefault("view", "today")
     st.session_state.setdefault("selected_source", "hh")
 
     vacancy_id = st.query_params.get("vacancy_id")
@@ -71,15 +77,13 @@ def main() -> None:
     if st.session_state.get("refresh_running"):
         stage = "parsing"
 
-    # --- Ручное обновление (не блокирует вход в другие дни) ---
     if stage == "parsing":
-        st.sidebar.title("🔎 Job Scout")
+        render_setup_sidebar()
         run_parse_with_progress()
         return
 
-    # --- Первичный мастер (нет профиля поиска) ---
     if stage != "app" and not (has_settings and st.session_state.get("view") == "setup"):
-        st.sidebar.title("🔎 Job Scout")
+        render_setup_sidebar()
         render_stepper(stage)
 
         if stage == "input":
@@ -87,7 +91,6 @@ def main() -> None:
             return
 
         if stage == "extracting":
-            st.sidebar.markdown("---")
             st.sidebar.caption("Идёт анализ резюме…")
             run_extract_with_progress()
             return
@@ -96,40 +99,43 @@ def main() -> None:
             render_keywords_step(setup_mode=False)
             return
 
-    # --- Режим настройки (профиль уже есть) ---
     if st.session_state.get("view") == "setup":
         render_setup_sidebar()
         render_keywords_step(setup_mode=True)
         return
 
-    # --- Режим работы ---
     st.session_state.app_unlocked = True
     render_app_sidebar(has_resume=has_resume)
 
     view = st.session_state.view
-    if view == "dashboard":
-        from ui.data import cached_last_scan
-
-        if not cached_last_scan():
-            st.info(
-                "Данные ещё не собраны. Нажмите **«Обновить сейчас»** в сайдбаре "
-                "или дождитесь автоматического обновления по расписанию."
-            )
-        render_dashboard()
-    elif view == "vacancies":
-        render_vacancies(st.session_state.selected_source)
+    if view == "today":
+        render_today()
+    elif view in ("opportunities", "vacancies"):
+        render_opportunities()
+    elif view == "saved":
+        render_opportunities(saved_only=True)
+    elif view == "resume" or view == "resume_advice":
+        st.markdown(
+            '<div class="nm-eyebrow">Резюме</div>'
+            '<div class="nm-title" style="font-size:1.35rem">Усильте резюме</div>'
+            '<p class="nm-subtitle">AI Resume Coach — что добавить, чтобы поднять match</p>',
+            unsafe_allow_html=True,
+        )
+        render_resume_advice()
+    elif view == "applications":
+        render_applications()
+    elif view == "insights" or view == "dashboard":
+        render_market_insights()
     elif view == "detail":
         vid = st.session_state.get("selected_vacancy_id")
         if vid:
             render_detail(vid)
         else:
-            st.session_state.view = "vacancies"
+            st.session_state.view = "opportunities"
             st.rerun()
-    elif view == "resume_advice":
-        render_resume_advice()
     else:
-        st.session_state.view = "dashboard"
-        render_dashboard()
+        st.session_state.view = "today"
+        render_today()
 
 
 if __name__ == "__main__":

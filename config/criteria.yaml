@@ -43,6 +43,6 @@ thresholds:
   max_age_days: 14
 
 cover_letter:
-  max_sentences: 7
+  max_sentences: 9
   must_mention: []
-  tone: "senior PM, факты, без пафоса, русский + PM-термины"
+  tone: "структурный шаблон, факты, без пафоса, русский"

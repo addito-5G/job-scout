@@ -1,54 +1,71 @@
 **Русский 🇷🇺** / [English 🇺🇸](README.md)
 
-# Job Scout
+# NextMove
 
-**Личный ассистент по поиску работы** — pet-project для сбора вакансий, AI-матчинга с резюме и аналитики рынка.
+**AI Career Copilot** — помогает не искать вакансии, а **получить оффер**.
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Streamlit](https://img.shields.io/badge/UI-Streamlit-FF4B4B.svg)](https://streamlit.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-> Сделано для собственного поиска работы (Product Manager). Это не SaaS и не автоотклик — только анализ, рекомендации и черновики сопроводительных.
-
-![Job Scout UI](docs/images/ui-preview.png)
+> Pet-project для личного поиска работы (Product Manager). Репозиторий: `job-scout`. UI-бренд: **NextMove**. Не SaaS и не автоотклик — анализ, приоритизация, материалы для отклика.
 
 ---
 
 ## Привет!
 
-Этот репозиторий — мой личный инструмент в поиске работы: собрал для себя, выложил сюда, чтобы делиться с друзьями и коллегами.
+Я собрал этот инструмент для себя и выложил сюда, чтобы делиться с друзьями и коллегами. Если устали вручную мониторить hh.ru, Habr и Geekjob — форкайте, пишите в [Issues](https://github.com/addito-5G/job-scout/issues) или [Telegram](https://t.me/addito).
 
-Если вы тоже устали вручную мониторить hh.ru, Habr и Geekjob — заглядывайте, форкайте, пишите в [Issues](https://github.com/addito-5G/job-scout/issues) или в [Telegram](https://t.me/addito). Буду рад обратной связи и новым знакомствам.
+**Главный вопрос продукта:** *что сделать сегодня, чтобы повысить шанс на оффер?*
+
+---
+
+## Скриншоты
+
+### Сегодня — ежедневный брифинг
+
+Утром открываете приложение и сразу видите: новые возможности, лучший match, главное действие дня и быстрые ссылки.
+
+![Экран «Сегодня»: брифинг, match 85%, CTA «Откликнуться», инсайты дня](docs/images/today-briefing.png)
+
+### Вакансия — AI Match и сопроводительное
+
+На карточке вакансии: анализ соответствия (совпадает / не хватает), рекомендация AI и генерация письма по структурному шаблону.
+
+![Деталь вакансии: AI Match, навыки, сопроводительное письмо YandexGPT](docs/images/vacancy-match-letter.png)
+
+### Рынок — Market Insights
+
+Не графики ради графиков: инсайты о спросе, зарплатах, match и навыках — чтобы менять стратегию поиска.
+
+![Market Insights: инсайты, метрики, формат работы, распределение match](docs/images/market-insights.png)
 
 ---
 
 ## Зачем это нужно
 
-При активном поиске работы я устал от одного и того же ручного цикла:
-
-- **Три площадки — три вкладки.** hh.ru, Habr Career, Geekjob. Каждое утро одно и то же: зайти, пробежать фильтры, выписать новое, не забыть то, что уже смотрел вчера.
-- **Смена роли — другой рынок.** Переход с продуктового аналитика на продакта — это не просто другое резюме. Другие ключевые слова, другие навыки в требованиях, другой срез по seniority. Старые сохранённые вакансии аналитика мешали видеть картину по PM.
-- **Сложно понять, «куда бить».** Резюме есть, вакансий сотни — но что рынок реально требует прямо сейчас? SQL и ClickHouse или unit economics и growth? Без агрегации это угадывание.
-- **Отклик отнимает время.** На каждую интересную вакансию — снова читать описание, сверять с опытом, набрасывать сопроводительное. На десятки позиций в неделю это выматывает.
-
-Job Scout закрывает эту боль: **один раз настроил профиль — дальше система сама собирает, фильтрует, оценивает и показывает, что требует рынок**. Я остаюсь на этапе принятия решения: откликаться или нет.
+| Боль | Как помогает NextMove |
+|------|------------------------|
+| Три площадки — три вкладки | Автоскан hh.ru, Habr Career, Geekjob |
+| Сотни вакансий — неясно, куда бить | AI Match % + навыки «есть / нет» |
+| Смена роли (аналитик → PM) | Фильтр профиля без очистки БД |
+| Отклик отнимает время | Черновик сопроводительного под вакансию |
+| Нет ощущения прогресса | Воронка откликов и daily briefing |
 
 ---
 
 ## Что умеет
 
-| Модуль | Зачем |
-|--------|-------|
-| **Scan** | Парсинг hh.ru, Habr Career и Geekjob по AI-настройкам из резюме |
-| **Enrich** | Полное описание, навыки и зарплата со страницы вакансии (браузер, опционально) |
-| **Match** | Быстрый матч (Ollama) и глубокий (Groq/Yandex) — насколько вакансия бьётся с профилем |
-| **Фильтр по роли** | Вакансии аналитика и продакта в одной базе — переключатель в сайдбаре, без очистки БД |
-| **Дашборд** | Метрики, топ навыков, формат работы, динамика появления вакансий |
-| **Рекомендации к резюме** | Сравнение резюме с требованиями рынка; что усилить, чего не хватает |
-| **Cover letter** | Черновик сопроводительного под конкретную вакансию |
-| **Расписание** | Ежедневный авто-сбор в 09:00 (macOS launchd) — утром уже свежие данные |
+| Раздел | Назначение |
+|--------|------------|
+| **Сегодня** | Daily briefing: главное действие, инсайты, метрики |
+| **Возможности** | Приоритизированный список с match, фильтры, быстрые действия |
+| **Сохранённые / Отклики** | Воронка job search CRM |
+| **Резюме** | AI Resume Coach — что усилить по рынку |
+| **Рынок** | Market Insights — спрос, ЗП, навыки |
+| **Career Agent** | Настройки поиска (роль, ключи, зарплата) |
 
-Автоотклик **намеренно не делается**: инструмент помогает сузить воронку и подготовить материалы, а не стрелять откликами вслепую.
+Под капотом: scan → enrich → fast/deep match → cover letter. Расписание: ежедневно в 09:00 (macOS launchd).
 
 ---
 
@@ -56,26 +73,23 @@ Job Scout закрывает эту боль: **один раз настроил
 
 ```mermaid
 flowchart LR
-    R[Резюме MD] --> P[Профиль]
-    P --> S[Настройки поиска]
+    R[Резюме] --> P[Профиль]
+    P --> S[Стратегия поиска]
     HH[hh.ru] --> SC[Скан]
     HB[Habr] --> SC
     GJ[Geekjob] --> SC
     SC --> DB[(SQLite)]
-    S --> SC
-    DB --> EN[Обогащение]
-    EN --> M[AI Match]
-    M --> UI[Streamlit UI]
+    DB --> M[AI Match]
+    M --> UI[NextMove UI]
+    M --> CL[Cover Letter]
 ```
 
 ### AI Router
 
-Задачи распределяются по провайдерам с fallback-цепочкой и кэшем в БД:
-
 | Задача | Primary | Fallback |
 |--------|---------|----------|
-| `parse_resume`, `fast_match` | **Ollama** (локально) | Yandex → Groq |
-| `suggest_filters`, `cover_letter` | **YandexGPT** | Groq → Ollama |
+| `parse_resume`, `fast_match` | **Ollama** | Yandex → Groq |
+| `cover_letter`, `suggest_filters` | **YandexGPT** | Groq → Ollama |
 | `match_vacancy_deep`, `improve_resume` | **Groq** | Yandex → Ollama |
 
 ---
@@ -91,22 +105,21 @@ source venv/bin/activate
 pip install -r requirements.txt
 
 cp .env.example .env
-# Заполните GROQ_API_KEY, YC_FOLDER_ID; положите yandex_key.json для YandexGPT
-
-cp browser_config.example.json browser_config.json  # опционально, для enrich
+# GROQ_API_KEY, YC_FOLDER_ID, yandex_key.json, CONTACT_* для писем
 
 python scripts/init_db.py
-streamlit run app.py
+streamlit run app.py --server.port 8502
 ```
 
-Откройте **http://localhost:8501** → загрузите резюме (`.md`) → настройте поиск → **«Обновить сейчас»** в сайдбаре.
+Откройте **http://localhost:8502** → загрузите резюме (`.md`) → **«Сканировать рынок»** в сайдбаре.
 
-### Опционально: обогащение и расписание
+Или двойной клик: **`Запустить Job Scout.command`**
+
+### Расписание и enrich (опционально)
 
 ```bash
 pip install -r requirements-browser.txt
-python -m camoufox fetch
-bash scripts/install_schedule.sh   # ежедневно в 09:00, macOS
+bash scripts/install_schedule.sh
 ```
 
 ---
@@ -115,33 +128,25 @@ bash scripts/install_schedule.sh   # ежедневно в 09:00, macOS
 
 | Переменная | Назначение |
 |------------|------------|
-| `OLLAMA_MODEL` | Локальная модель (`qwen2.5:14b`) |
-| `GROQ_API_KEY` | Глубокий матч и рекомендации к резюме |
+| `OLLAMA_MODEL` | Локальная модель |
+| `GROQ_API_KEY` | Глубокий match |
 | `YC_FOLDER_ID`, `YC_KEY_PATH` | YandexGPT |
-| `RESUME_PATH` | Путь к резюме по умолчанию |
-| `DATABASE_URL` | `sqlite:///./data/vacancies.db` |
+| `CONTACT_PHONE`, `CONTACT_TELEGRAM`, `CONTACT_LINKEDIN` | Подпись в письмах |
+| `DATABASE_URL` | SQLite |
 
-Полный список — в [`.env.example`](.env.example).
+Полный список: [`.env.example`](.env.example).
 
 ---
 
-## Структура проекта
+## Структура
 
 ```
-job-scout/
-├── app.py                 # точка входа Streamlit
-├── ui/                    # страницы и компоненты
-├── config/
-│   ├── criteria.yaml      # правила скоринга (настройте под себя)
-│   ├── schedule.yaml      # расписание автообновления
-│   └── sources.yaml       # парсеры и браузер
-├── scripts/               # CLI: scan, enrich, match, daily_update
-├── src/
-│   ├── adapters/          # hh, habr, geekjob
-│   ├── ai/                # router, providers, prompts, cache
-│   ├── db/                # SQLAlchemy models
-│   └── services/          # profile, scan, match, dashboard
-└── data/                  # локальная БД и логи (не в git)
+job-scout/          # репозиторий (legacy name)
+├── app.py          # NextMove UI
+├── ui/             # today, opportunities, applications, insights…
+├── src/services/   # scan, match, today_service, cover_letter…
+├── config/         # criteria, schedule, sources
+└── scripts/        # CLI и launchd
 ```
 
 ---
@@ -149,39 +154,25 @@ job-scout/
 ## CLI
 
 ```bash
-python scripts/setup.py              # резюме → профиль + настройки поиска
-python scripts/scan.py                 # сбор вакансий
-python scripts/enrich.py --limit 20    # обогащение через браузер
-python scripts/match.py --limit 30     # AI fast match
-python scripts/daily_update.py         # полный пайплайн по расписанию
+python scripts/setup.py
+python scripts/scan.py
+python scripts/match.py --limit 50
+python scripts/daily_update.py --skip-scan   # без парсинга
 ```
-
----
-
-## macOS: запуск двойным кликом
-
-| Файл | Действие |
-|------|----------|
-| **`Запустить Job Scout.command`** | Запуск Streamlit UI |
-| **`Обновить вакансии (CLI).command`** | `scan.py` + `match.py` из терминала |
-
-При первом запуске macOS может попросить: **ПКМ → Открыть**.
 
 ---
 
 ## Дисклеймер
 
-Pet-project для личного поиска работы и экспериментов с AI. Соблюдайте правила площадок (hh.ru, Habr Career, Geekjob); не используйте для агрессивного или коммерческого скрейпинга.
+Pet-project для личного поиска работы. Соблюдайте правила площадок; не используйте для агрессивного скрейпинга.
 
 ---
 
 ## Автор
 
-- GitHub: [@addito-5G](https://github.com/addito-5G) — профиль с другими pet-проектами
-- Telegram: [@addito](https://t.me/addito) — пишите, если пригодилось или хотите обсудить
+- GitHub: [@addito-5G](https://github.com/addito-5G)
+- Telegram: [@addito](https://t.me/addito)
 - Email: [addito1@yandex.ru](mailto:addito1@yandex.ru)
-
-Если проект оказался полезен — звёздочка на GitHub или ссылка другу будут приятным сигналом. Спасибо, что заглянули.
 
 ---
 

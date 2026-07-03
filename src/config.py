@@ -41,3 +41,8 @@ USAGE_WARN_THRESHOLD = float(os.getenv("USAGE_WARN_THRESHOLD", "0.8"))
 DEFAULT_RESUME_PATH = os.path.expanduser(
     os.getenv("RESUME_PATH", "~/Documents/resume.md")
 )
+
+# Контакты для подписи в сопроводительных письмах (подставляются автоматически)
+CONTACT_PHONE = os.getenv("CONTACT_PHONE", "").strip()
+CONTACT_TELEGRAM = os.getenv("CONTACT_TELEGRAM", "").lstrip("@").strip()
+CONTACT_LINKEDIN = os.getenv("CONTACT_LINKEDIN", "").strip()

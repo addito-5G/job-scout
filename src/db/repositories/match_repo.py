@@ -66,3 +66,28 @@ def get_match(
             VacancyMatch.match_level == match_level,
         )
     ).scalar_one_or_none()
+
+
+def save_cover_letter_draft(
+    session: Session,
+    vacancy_id: int,
+    profile_id: int,
+    letter: str,
+) -> None:
+    """Сохранить письмо, не затирая данные матча."""
+    for level in ("deep", "fast"):
+        row = get_match(session, vacancy_id, profile_id, level)
+        if row:
+            row.cover_letter_draft = letter
+            session.commit()
+            return
+    row = VacancyMatch(
+        vacancy_id=vacancy_id,
+        profile_id=profile_id,
+        match_level="fast",
+        match_score=0.0,
+        recommendation="consider",
+        cover_letter_draft=letter,
+    )
+    session.add(row)
+    session.commit()

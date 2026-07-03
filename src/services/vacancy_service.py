@@ -23,6 +23,7 @@ class VacancyFilters:
     source: str | None = None
     search_settings_id: int | None = None
     profile_role: str | None = None
+    user_status: str | None = None
     hide_hidden: bool = True
     page: int = 1
     per_page: int = 30
@@ -45,6 +46,7 @@ class VacancyListItem:
     score: int
     published_at: datetime | None
     tags: list[str]
+    source: str = ""
 
 
 @dataclass
@@ -132,6 +134,38 @@ def _match_to_dict(row: VacancyMatch | None) -> dict | None:
         "deep_analysis": row.ai_analysis,
         "cover_letter_draft": row.cover_letter_draft,
     }
+
+
+def match_has_analysis(match: dict | None) -> bool:
+    """Есть ли в записи реальный AI-анализ (не пустая заглушка под письмо)."""
+    if not match:
+        return False
+    if match.get("matched_skills") or match.get("missing_skills"):
+        return True
+    if (match.get("match_summary") or "").strip():
+        return True
+    if (match.get("deep_analysis") or "").strip():
+        return True
+    if match.get("strengths") or match.get("risks"):
+        return True
+    score = match.get("match_score") or 0
+    return score > 0 and bool(match.get("recommendation"))
+
+
+def pick_best_match(fast_match: dict | None, deep_match: dict | None) -> tuple[dict | None, str | None]:
+    """Приоритет: deep с анализом → fast → пусто."""
+    if match_has_analysis(deep_match):
+        return deep_match, "deep"
+    if match_has_analysis(fast_match):
+        return fast_match, "fast"
+    return None, None
+
+
+def _cover_letter_from_rows(fast: VacancyMatch | None, deep: VacancyMatch | None) -> str | None:
+    for row in (deep, fast):
+        if row and row.cover_letter_draft:
+            return row.cover_letter_draft
+    return None
 
 
 def get_salary_bounds(session: Session) -> tuple[int, int]:
@@ -225,6 +259,8 @@ def list_vacancies(
         conditions.append(Vacancy.id.in_(tag_subq))
     if filters.source:
         conditions.append(Vacancy.source == filters.source)
+    if filters.user_status:
+        conditions.append(Vacancy.user_status == filters.user_status)
     if filters.profile_role is not None:
         conditions.append(Vacancy.profile_role == filters.profile_role)
     elif filters.search_settings_id is not None:
@@ -262,6 +298,7 @@ def list_vacancies(
                 score=v.rule_score or 0,
                 published_at=v.published_at,
                 tags=[t[0] for t in tag_rows],
+                source=v.source,
             )
         )
     return items, total
@@ -318,7 +355,7 @@ def get_vacancy_detail(
         experience=v.experience_required,
         status=v.user_status or "new",
         score=v.rule_score or 0,
-        cover_letter=deep.cover_letter_draft if deep and deep.cover_letter_draft else None,
+        cover_letter=_cover_letter_from_rows(fast, deep),
         source=v.source,
         published_at=v.published_at,
         fast_match=_match_to_dict(fast),

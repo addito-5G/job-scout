@@ -75,7 +75,7 @@ def run_parse_with_progress() -> None:
         st.session_state.app_unlocked = True
         go_to("app")
         if st.session_state.get("view") == "setup":
-            st.session_state.view = "dashboard"
+            st.session_state.view = "today"
         st.success(
             f"Собрано **{result.scraped}** вакансий (новых **{result.new_count}**). "
             f"Откройте дашборд или площадки в сайдбаре."

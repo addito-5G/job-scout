@@ -1,11 +1,12 @@
-"""Боковая навигация основного интерфейса."""
+"""Goal-oriented navigation — user intent, not implementation."""
 
 from __future__ import annotations
 
 import streamlit as st
 
-from ui.data import cached_last_scan, cached_schedule_summary, cached_source_counts
-from ui.profile_filter import get_selected_profile_role, render_profile_filter_sidebar
+from ui.data import cached_last_scan, cached_schedule_summary
+from ui.design_system import render_sidebar_brand
+from ui.profile_filter import render_profile_filter_sidebar
 from ui.workflow import go_to_setup, reset_to_input, start_manual_refresh
 
 SOURCE_META: dict[str, tuple[str, str]] = {
@@ -14,36 +15,41 @@ SOURCE_META: dict[str, tuple[str, str]] = {
     "geekjob": ("Geekjob", "🟩"),
 }
 
+NAV_ITEMS: list[tuple[str, str, str]] = [
+    ("today", "🏠", "Сегодня"),
+    ("opportunities", "🎯", "Возможности"),
+    ("saved", "⭐", "Сохранённые"),
+    ("resume", "📄", "Резюме"),
+    ("applications", "✉", "Отклики"),
+    ("insights", "📈", "Рынок"),
+]
 
-def _go_view(view: str, *, source: str | None = None) -> None:
+
+def _go_view(view: str) -> None:
     st.session_state.view = view
-    if source is not None:
-        st.session_state.selected_source = source
-        st.session_state.vac_page = 1
     if view != "detail":
         st.query_params.clear()
+    st.rerun()
 
 
 def _render_scan_status() -> None:
-    st.sidebar.markdown("**Обновление данных**")
+    st.sidebar.markdown(
+        '<div class="nm-section-label" style="margin-top:0">Сканирование рынка</div>',
+        unsafe_allow_html=True,
+    )
     summary = cached_schedule_summary()
     last = cached_last_scan()
 
     if last:
         st.sidebar.caption(f"Последний сбор: **{last['finished_at']}**")
-        st.sidebar.caption(
-            f"Вакансий: {last['total_found']} · новых {last['new_added']}"
-        )
+        st.sidebar.caption(f"+{last['new_added']} новых · {last['total_found']} всего")
     else:
-        st.sidebar.warning("Данные ещё не собирались — нажмите «Обновить сейчас».")
+        st.sidebar.warning("Рынок ещё не просканирован")
 
     if summary["enabled"]:
-        st.sidebar.caption(f"Расписание: ежедневно **{summary['scan_time']}** МСК")
-        st.sidebar.caption(f"Следующий запуск: {summary['next_run']}")
-    else:
-        st.sidebar.caption("Автообновление выключено")
+        st.sidebar.caption(f"Авто: **{summary['scan_time']}** МСК · след. {summary['next_run']}")
 
-    if st.sidebar.button("🔄 Обновить сейчас", use_container_width=True, type="primary"):
+    if st.sidebar.button("🔄 Сканировать рынок", use_container_width=True, type="primary"):
         start_manual_refresh()
         st.rerun()
 
@@ -51,56 +57,41 @@ def _render_scan_status() -> None:
 
 
 def render_app_sidebar(*, has_resume: bool) -> None:
-    st.sidebar.title("🔎 Job Scout")
-    st.sidebar.caption("Режим работы")
-
+    render_sidebar_brand()
     _render_scan_status()
+    render_profile_filter_sidebar()
 
-    profile_role = render_profile_filter_sidebar()
+    current = st.session_state.get("view", "today")
+    st.sidebar.markdown(
+        '<div class="nm-section-label">Навигация</div>',
+        unsafe_allow_html=True,
+    )
 
-    counts = cached_source_counts(profile_role)
-    current_view = st.session_state.get("view", "dashboard")
-
-    if st.sidebar.button(
-        "📊 Аналитический дашборд",
-        use_container_width=True,
-        type="primary" if current_view == "dashboard" else "secondary",
-    ):
-        _go_view("dashboard")
-        st.rerun()
-
-    st.sidebar.markdown("**Вакансии по площадкам**")
-    for source, (label, icon) in SOURCE_META.items():
-        count = counts.get(source, 0)
-        active = current_view in ("vacancies", "detail") and st.session_state.get("selected_source") == source
+    for view_id, icon, label in NAV_ITEMS:
+        active = current == view_id or (view_id == "opportunities" and current == "vacancies")
         if st.sidebar.button(
-            f"{icon} {label} ({count})",
-            key=f"nav_{source}",
+            f"{icon} {label}",
+            key=f"nav_{view_id}",
             use_container_width=True,
             type="primary" if active else "secondary",
         ):
-            _go_view("vacancies", source=source)
-            st.rerun()
+            _go_view(view_id)
 
     st.sidebar.divider()
 
-    if st.sidebar.button("📝 Рекомендации к резюме", use_container_width=True):
-        _go_view("resume_advice")
-        st.rerun()
-
-    if has_resume and st.sidebar.button("⚙️ Настройки поиска", use_container_width=True):
+    if has_resume and st.sidebar.button("⚙ Career Agent", use_container_width=True):
         go_to_setup()
         st.rerun()
 
-    if has_resume and st.sidebar.button("🔄 Новый поиск", use_container_width=True):
+    if has_resume and st.sidebar.button("Новый профиль", use_container_width=True):
         reset_to_input()
         st.session_state.workflow_stage = "input"
         st.rerun()
 
 
 def render_setup_sidebar() -> None:
-    st.sidebar.title("🔎 Job Scout")
-    st.sidebar.caption("Режим настройки")
+    render_sidebar_brand()
+    st.sidebar.caption("Настройка Career Agent")
     if st.sidebar.button("← К работе", use_container_width=True, type="primary"):
         from ui.workflow import go_to_work
 

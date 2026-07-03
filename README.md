@@ -1,54 +1,71 @@
 [Русский 🇷🇺](README_ru.md) / **English 🇺🇸**
 
-# Job Scout
+# NextMove
 
-**Personal job search assistant** — a pet project for collecting vacancies, AI matching against your resume, and market analytics.
+**AI Career Copilot** — built to help you **get hired**, not just browse vacancies.
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Streamlit](https://img.shields.io/badge/UI-Streamlit-FF4B4B.svg)](https://streamlit.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-> Built for my own job search (Product Manager). This is not SaaS and not auto-apply — only analysis, recommendations, and cover letter drafts.
-
-![Job Scout UI](docs/images/ui-preview.png)
+> Personal pet project for job search (Product Manager). Repo name: `job-scout`. UI brand: **NextMove**. Not SaaS, not auto-apply — analysis, prioritization, and application materials.
 
 ---
 
 ## Hello!
 
-This repository is my personal tool for job hunting: I built it for myself and shared it here for friends and colleagues.
+I built this for my own job search and shared it for friends and colleagues. Tired of manually checking hh.ru, Habr, and Geekjob? Fork it, open an [Issue](https://github.com/addito-5G/job-scout/issues), or message me on [Telegram](https://t.me/addito).
 
-If you're also tired of manually monitoring hh.ru, Habr, and Geekjob — take a look, fork it, and reach out via [Issues](https://github.com/addito-5G/job-scout/issues) or [Telegram](https://t.me/addito). I'd love your feedback and to connect with new people.
-
----
-
-## Why this exists
-
-During an active job search, I got tired of the same manual loop:
-
-- **Three platforms — three tabs.** hh.ru, Habr Career, Geekjob. Every morning the same routine: log in, run through filters, note what's new, and don't forget what you already looked at yesterday.
-- **Role change — different market.** Moving from product analytics to product management isn't just a different resume. Different keywords, different skills in requirements, a different seniority slice. Old saved analyst vacancies cluttered the picture for PM roles.
-- **Hard to know where to focus.** You have a resume, hundreds of vacancies — but what does the market actually require right now? SQL and ClickHouse or unit economics and growth? Without aggregation, it's guesswork.
-- **Applying takes time.** For every interesting vacancy — read the description again, compare with your experience, draft a cover letter. Dozens of positions per week is exhausting.
-
-Job Scout addresses this pain: **set up your profile once — then the system collects, filters, scores, and shows what the market demands**. I stay at the decision stage: apply or not.
+**Core product question:** *what should I do today to maximize my chances of getting an offer?*
 
 ---
 
-## What it does
+## Screenshots
 
-| Module | Purpose |
-|--------|---------|
-| **Scan** | Parse hh.ru, Habr Career, and Geekjob using AI-driven settings from your resume |
-| **Enrich** | Full description, skills, and salary from the vacancy page (browser, optional) |
-| **Match** | Fast match (Ollama) and deep match (Groq/Yandex) — how well a vacancy fits your profile |
-| **Role filter** | Analyst and PM vacancies in one database — sidebar toggle, no DB wipe |
-| **Dashboard** | Metrics, top skills, work format, vacancy posting trends |
-| **Resume recommendations** | Compare your resume with market requirements; what to strengthen, what's missing |
-| **Cover letter** | Draft cover letter tailored to a specific vacancy |
-| **Schedule** | Daily auto-collection at 09:00 (macOS launchd) — fresh data in the morning |
+### Today — daily briefing
 
-Auto-apply is **intentionally not implemented**: the tool helps narrow the funnel and prepare materials, not spray applications blindly.
+Open the app in the morning: new opportunities, best match, primary CTA, and quick navigation.
+
+![Today screen: briefing, 85% match, Apply CTA, daily insights](docs/images/today-briefing.png)
+
+### Vacancy — AI Match & cover letter
+
+Per-vacancy view: fit analysis (matched / missing skills), AI recommendation, and cover letter generation from a structured template.
+
+![Vacancy detail: AI Match, skills, YandexGPT cover letter](docs/images/vacancy-match-letter.png)
+
+### Market — Market Insights
+
+Insights over vanity charts: demand, salary, match distribution, and trending skills to adjust your search strategy.
+
+![Market Insights: insights, metrics, work format, match distribution](docs/images/market-insights.png)
+
+---
+
+## Why it exists
+
+| Pain | How NextMove helps |
+|------|---------------------|
+| Three platforms, three tabs | Auto-scan hh.ru, Habr Career, Geekjob |
+| Hundreds of jobs — where to focus | AI Match % + matched / missing skills |
+| Role switch (analyst → PM) | Profile filter without wiping the DB |
+| Applying takes time | Cover letter draft per vacancy |
+| No sense of progress | Application funnel + daily briefing |
+
+---
+
+## Features
+
+| Section | Purpose |
+|---------|---------|
+| **Today** | Daily briefing: top action, insights, metrics |
+| **Opportunities** | Prioritized list with match score and quick actions |
+| **Saved / Applications** | Job search CRM funnel |
+| **Resume** | AI Resume Coach — what to strengthen for the market |
+| **Market** | Market Insights — demand, salary, skills |
+| **Career Agent** | Search preferences (role, keywords, salary) |
+
+Under the hood: scan → enrich → fast/deep match → cover letter. Schedule: daily at 09:00 (macOS launchd).
 
 ---
 
@@ -56,26 +73,23 @@ Auto-apply is **intentionally not implemented**: the tool helps narrow the funne
 
 ```mermaid
 flowchart LR
-    R[Resume MD] --> P[Profile]
-    P --> S[Search settings]
+    R[Resume] --> P[Profile]
+    P --> S[Search strategy]
     HH[hh.ru] --> SC[Scan]
     HB[Habr] --> SC
     GJ[Geekjob] --> SC
     SC --> DB[(SQLite)]
-    S --> SC
-    DB --> EN[Enrich]
-    EN --> M[AI Match]
-    M --> UI[Streamlit UI]
+    DB --> M[AI Match]
+    M --> UI[NextMove UI]
+    M --> CL[Cover Letter]
 ```
 
 ### AI Router
 
-Tasks are routed across providers with a fallback chain and DB cache:
-
 | Task | Primary | Fallback |
 |--------|---------|----------|
-| `parse_resume`, `fast_match` | **Ollama** (local) | Yandex → Groq |
-| `suggest_filters`, `cover_letter` | **YandexGPT** | Groq → Ollama |
+| `parse_resume`, `fast_match` | **Ollama** | Yandex → Groq |
+| `cover_letter`, `suggest_filters` | **YandexGPT** | Groq → Ollama |
 | `match_vacancy_deep`, `improve_resume` | **Groq** | Yandex → Ollama |
 
 ---
@@ -91,22 +105,21 @@ source venv/bin/activate
 pip install -r requirements.txt
 
 cp .env.example .env
-# Fill in GROQ_API_KEY, YC_FOLDER_ID; place yandex_key.json for YandexGPT
-
-cp browser_config.example.json browser_config.json  # optional, for enrich
+# GROQ_API_KEY, YC_FOLDER_ID, yandex_key.json, CONTACT_* for letters
 
 python scripts/init_db.py
-streamlit run app.py
+streamlit run app.py --server.port 8502
 ```
 
-Open **http://localhost:8501** → upload your resume (`.md`) → configure search → **"Update now"** in the sidebar.
+Open **http://localhost:8502** → upload resume (`.md`) → **Scan market** in the sidebar.
 
-### Optional: enrichment and scheduling
+Or double-click **`Запустить Job Scout.command`**
+
+### Schedule & enrich (optional)
 
 ```bash
 pip install -r requirements-browser.txt
-python -m camoufox fetch
-bash scripts/install_schedule.sh   # daily at 09:00, macOS
+bash scripts/install_schedule.sh
 ```
 
 ---
@@ -114,34 +127,26 @@ bash scripts/install_schedule.sh   # daily at 09:00, macOS
 ## Environment variables
 
 | Variable | Purpose |
-|------------|------------|
-| `OLLAMA_MODEL` | Local model (`qwen2.5:14b`) |
-| `GROQ_API_KEY` | Deep match and resume recommendations |
+|----------|---------|
+| `OLLAMA_MODEL` | Local model |
+| `GROQ_API_KEY` | Deep match |
 | `YC_FOLDER_ID`, `YC_KEY_PATH` | YandexGPT |
-| `RESUME_PATH` | Default resume path |
-| `DATABASE_URL` | `sqlite:///./data/vacancies.db` |
+| `CONTACT_PHONE`, `CONTACT_TELEGRAM`, `CONTACT_LINKEDIN` | Cover letter signature |
+| `DATABASE_URL` | SQLite |
 
-Full list — in [`.env.example`](.env.example).
+Full list: [`.env.example`](.env.example).
 
 ---
 
-## Project structure
+## Structure
 
 ```
-job-scout/
-├── app.py                 # Streamlit entry point
-├── ui/                    # pages and components
-├── config/
-│   ├── criteria.yaml      # scoring rules (customize for yourself)
-│   ├── schedule.yaml      # auto-update schedule
-│   └── sources.yaml       # parsers and browser
-├── scripts/               # CLI: scan, enrich, match, daily_update
-├── src/
-│   ├── adapters/          # hh, habr, geekjob
-│   ├── ai/                # router, providers, prompts, cache
-│   ├── db/                # SQLAlchemy models
-│   └── services/          # profile, scan, match, dashboard
-└── data/                  # local DB and logs (not in git)
+job-scout/          # repository (legacy name)
+├── app.py          # NextMove UI entry
+├── ui/             # today, opportunities, applications, insights…
+├── src/services/   # scan, match, today_service, cover_letter…
+├── config/         # criteria, schedule, sources
+└── scripts/        # CLI and launchd
 ```
 
 ---
@@ -149,39 +154,25 @@ job-scout/
 ## CLI
 
 ```bash
-python scripts/setup.py              # resume → profile + search settings
-python scripts/scan.py                 # collect vacancies
-python scripts/enrich.py --limit 20    # browser enrichment
-python scripts/match.py --limit 30     # AI fast match
-python scripts/daily_update.py         # full scheduled pipeline
+python scripts/setup.py
+python scripts/scan.py
+python scripts/match.py --limit 50
+python scripts/daily_update.py --skip-scan   # without parsing
 ```
-
----
-
-## macOS: double-click launch
-
-| File | Action |
-|------|--------|
-| **`Запустить Job Scout.command`** | Launch Streamlit UI |
-| **`Обновить вакансии (CLI).command`** | `scan.py` + `match.py` from terminal |
-
-On first launch, macOS may prompt: **Right-click → Open**.
 
 ---
 
 ## Disclaimer
 
-Pet project for personal job search and AI experiments. Respect platform rules (hh.ru, Habr Career, Geekjob); do not use for aggressive or commercial scraping.
+Personal pet project. Respect platform ToS; do not use for aggressive scraping.
 
 ---
 
 ## Author
 
-- GitHub: [@addito-5G](https://github.com/addito-5G) — profile with other pet projects
-- Telegram: [@addito](https://t.me/addito) — reach out if it helped or you want to discuss
+- GitHub: [@addito-5G](https://github.com/addito-5G)
+- Telegram: [@addito](https://t.me/addito)
 - Email: [addito1@yandex.ru](mailto:addito1@yandex.ru)
-
-If the project was useful — a GitHub star or a link to a friend is a nice signal. Thanks for stopping by.
 
 ---
 

@@ -48,13 +48,13 @@ def go_to_setup() -> None:
 
 
 def go_to_work() -> None:
-    st.session_state.view = "dashboard"
+    st.session_state.view = "today"
     st.session_state.workflow_stage = "app"
 
 
 def reset_to_input() -> None:
     st.session_state.workflow_stage = "input"
-    st.session_state.view = "dashboard"
+    st.session_state.view = "today"
     st.session_state.app_unlocked = False
     st.session_state.keys_extracted = False
     st.session_state.pop("search_draft", None)

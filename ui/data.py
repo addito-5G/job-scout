@@ -88,6 +88,21 @@ def cached_vacancy_list(
     page: int,
     profile_role: str | None,
 ) -> tuple[list[dict], int]:
+    return cached_opportunity_list(
+        profile_id, source or None, min_match_score, search, page, profile_role, status=None
+    )
+
+
+@st.cache_data(ttl=60, show_spinner=False)
+def cached_opportunity_list(
+    profile_id: int | None,
+    source: str | None,
+    min_match_score: int,
+    search: str,
+    page: int,
+    profile_role: str | None,
+    status: str | None = None,
+) -> tuple[list[dict], int]:
     session = _session_scope()
     try:
         filters = VacancyFilters(
@@ -95,8 +110,10 @@ def cached_vacancy_list(
             min_match_score=min_match_score,
             search=search or None,
             page=page,
-            per_page=30,
+            per_page=20,
             profile_role=profile_role,
+            user_status=status,
+            hide_hidden=status != "hidden",
         )
         items, total = list_vacancies(session, profile_id, filters)
         return [
@@ -115,6 +132,7 @@ def cached_vacancy_list(
                 "url": i.url,
                 "score": i.score,
                 "tags": i.tags,
+                "source": i.source,
             }
             for i in items
         ], total
