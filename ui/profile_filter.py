@@ -43,10 +43,13 @@ def render_profile_filter_sidebar() -> str | None:
         prev_role = st.session_state.get("selected_profile_role")
 
         choice = st.sidebar.selectbox(
-            "Профиль поиска",
+            "Целевая должность",
             options=labels,
             index=default_index,
-            help="Фильтр вакансий и аналитики по должности из резюме",
+            help=(
+                "Фильтр вакансий по одной из целевых ролей из вашего резюме. "
+                "Это не отдельные CV — для нового файла нажмите «Загрузить новое резюме» ниже."
+            ),
         )
         selected_role = roles[labels.index(choice)]
         selected_label = choice
@@ -61,3 +64,13 @@ def render_profile_filter_sidebar() -> str | None:
         return selected_role
     finally:
         session.close()
+
+
+def render_resume_upload_sidebar() -> None:
+    if st.sidebar.button(
+        "📎 Загрузить новое резюме",
+        use_container_width=True,
+        help="Заменить CV: AI пересоберёт профиль и ключи поиска",
+    ):
+        start_resume_upload()
+        st.rerun()

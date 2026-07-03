@@ -39,8 +39,15 @@ DEFAULT_ROLE_LABELS = {
 }
 
 
+def slug_role(title: str) -> str:
+    """Стабильный ключ роли из названия должности."""
+    normalized = re.sub(r"[^\w\s-]", "", title.lower().replace("ё", "е"))
+    slug = re.sub(r"[\s-]+", "_", normalized).strip("_")
+    return (slug[:64] if slug else ROLE_GENERAL)
+
+
 def infer_role_from_title(title: str | None) -> str | None:
-    """Роль из названия должности; ``None`` если не PM и не аналитик."""
+    """Роль из названия должности; для неизвестных — slug из title."""
     if not title:
         return None
     low = title.lower()
@@ -48,7 +55,7 @@ def infer_role_from_title(title: str | None) -> str | None:
         return ROLE_PRODUCT_ANALYST
     if any(k in low for k in PM_TITLE_KW):
         return ROLE_PRODUCT_MANAGER
-    return None
+    return slug_role(title)
 
 
 def infer_target_role(vacancy_title: str) -> str:

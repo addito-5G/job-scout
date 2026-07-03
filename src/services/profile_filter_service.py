@@ -53,8 +53,22 @@ def settings_label(settings: SearchSettings) -> str:
 
 
 def list_profile_filters(session: Session, profile_id: int) -> list[dict[str, Any]]:
-    """Уникальные роли поиска: аналитик, продакт и т.д."""
+    """Целевые должности из резюме и настроек поиска (не отдельные CV)."""
     filters: dict[str, dict[str, Any]] = {}
+
+    profile = session.get(CandidateProfile, profile_id)
+    if profile:
+        seed_titles = [profile.title] if profile.title else []
+        seed_titles.extend(str(t) for t in _loads(profile.recommended_roles_json, []) if t)
+        for title in seed_titles:
+            role = infer_role_from_title(str(title))
+            if not role or role in filters:
+                continue
+            filters[role] = {
+                "role": role,
+                "label": str(title).strip(),
+                "is_active": False,
+            }
 
     rows = session.execute(
         select(SearchSettings)
@@ -86,10 +100,11 @@ def list_profile_filters(session: Session, profile_id: int) -> list[dict[str, An
 
     ordered = [ROLE_PRODUCT_MANAGER, ROLE_PRODUCT_ANALYST]
     result = [filters[r] for r in ordered if r in filters]
-    for role, item in filters.items():
-        if role not in ordered:
-            result.append(item)
-    return result
+    extras = sorted(
+        (item for role, item in filters.items() if role not in ordered),
+        key=lambda x: x["label"].lower(),
+    )
+    return result + extras
 
 
 def get_active_filter_role(session: Session, profile_id: int) -> str | None:

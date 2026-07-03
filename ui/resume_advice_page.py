@@ -25,11 +25,10 @@ def render_resume_advice() -> None:
         st.warning("Сначала загрузите резюме на стартовом экране.")
         return
 
-    if st.button("Обновить резюме", help="Загрузить другой файл и пересобрать профиль поиска"):
-        from ui.workflow import reset_to_input
+    if st.button("Обновить резюме", help="То же, что «Загрузить новое резюме» в сайдбаре"):
+        from ui.workflow import start_resume_upload
 
-        reset_to_input()
-        st.session_state.workflow_stage = "input"
+        start_resume_upload()
         st.rerun()
 
     profile_role = get_selected_profile_role()

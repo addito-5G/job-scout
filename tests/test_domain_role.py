@@ -20,7 +20,7 @@ def test_infer_role_from_title_analyst():
 
 
 def test_infer_role_from_title_unknown():
-    assert infer_role_from_title("Backend Developer") is None
+    assert infer_role_from_title("Backend Developer") == "backend_developer"
 
 
 def test_infer_target_role_pm_abbreviation():

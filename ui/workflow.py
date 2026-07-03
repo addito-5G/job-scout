@@ -65,6 +65,11 @@ def reset_to_input() -> None:
             del st.session_state[key]
 
 
+def start_resume_upload() -> None:
+    """Вернуться к экрану загрузки резюме."""
+    reset_to_input()
+
+
 def start_manual_refresh() -> None:
     from services.parse_estimate import estimate_parse_seconds
 
@@ -81,12 +86,16 @@ def resolve_initial_stage(*, has_resume: bool, has_settings: bool) -> str:
         return "extracting"
     if st.session_state.get("view") == "setup":
         return "keywords"
-    if st.session_state.get("workflow_stage") == "keywords" and not has_settings:
+
+    explicit = st.session_state.get("workflow_stage")
+    if explicit == "input":
+        return "input"
+    if explicit == "keywords" and not has_settings:
         return "keywords"
-    if has_resume and has_settings:
+    if has_resume and has_settings and explicit not in ("input", "extracting", "keywords"):
         return "app"
-    if st.session_state.get("workflow_stage"):
-        return st.session_state.workflow_stage
+    if explicit:
+        return explicit
     if has_resume and st.session_state.get("keys_extracted"):
         return "keywords"
     return "input"
