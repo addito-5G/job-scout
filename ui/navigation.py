@@ -7,7 +7,7 @@ import streamlit as st
 from ui.data import cached_last_scan, cached_schedule_summary
 from ui.design_system import render_sidebar_brand
 from ui.profile_filter import render_profile_filter_sidebar
-from ui.workflow import go_to_setup, reset_to_input, start_manual_refresh
+from ui.workflow import go_to_setup, start_manual_refresh
 
 SOURCE_META: dict[str, tuple[str, str]] = {
     "hh": ("HeadHunter", "🟥"),
@@ -81,11 +81,6 @@ def render_app_sidebar(*, has_resume: bool) -> None:
 
     if has_resume and st.sidebar.button("⚙ Career Agent", use_container_width=True):
         go_to_setup()
-        st.rerun()
-
-    if has_resume and st.sidebar.button("Новый профиль", use_container_width=True):
-        reset_to_input()
-        st.session_state.workflow_stage = "input"
         st.rerun()
 
 

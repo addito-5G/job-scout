@@ -22,8 +22,15 @@ def render_resume_advice() -> None:
 
     profile_id = cached_profile_id()
     if profile_id is None:
-        st.warning("Сначала загрузите резюме (шаг 1 — «Новый поиск» в сайдбаре).")
+        st.warning("Сначала загрузите резюме на стартовом экране.")
         return
+
+    if st.button("Обновить резюме", help="Загрузить другой файл и пересобрать профиль поиска"):
+        from ui.workflow import reset_to_input
+
+        reset_to_input()
+        st.session_state.workflow_stage = "input"
+        st.rerun()
 
     profile_role = get_selected_profile_role()
     profile_label = get_selected_profile_label()

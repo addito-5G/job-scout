@@ -10,6 +10,7 @@ from db.tables import Vacancy
 
 _engine = None
 _SessionLocal = None
+_schema_initialized = False
 
 
 def resolve_database_url(url: str) -> str:
@@ -50,10 +51,13 @@ def get_session():
 
 
 def init_db() -> None:
+    global _schema_initialized
     engine = get_engine()
-    from db.migrations import apply_migrations
+    if not _schema_initialized:
+        from db.migrations import apply_migrations
 
-    apply_migrations(engine)
+        apply_migrations(engine)
+        _schema_initialized = True
 
     from services.profile_filter_service import backfill_profile_roles
 

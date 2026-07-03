@@ -55,13 +55,25 @@ def test_legacy_db_gets_stamped(monkeypatch, tmp_path):
     assert revision == head
 
 
-def test_init_db_idempotent(monkeypatch, tmp_path):
-    db_file = tmp_path / "idempotent.db"
+def test_init_db_runs_migrations_only_once(monkeypatch, tmp_path):
+    db_file = tmp_path / "once.db"
     monkeypatch.setattr(config, "DATABASE_URL", f"sqlite:///{db_file}")
-    _reset_engine()
+
+    import db.engine as engine_module
+    from db.tables import Base
+
+    calls: list[int] = []
+
+    def _track(engine):
+        calls.append(1)
+        Base.metadata.create_all(engine)
+
+    monkeypatch.setattr("db.migrations.apply_migrations", _track)
+    engine_module._engine = None
+    engine_module._SessionLocal = None
+    engine_module._schema_initialized = False
 
     init_db()
     init_db()
 
-    inspector = inspect(get_engine())
-    assert "vacancies" in inspector.get_table_names()
+    assert len(calls) == 1
