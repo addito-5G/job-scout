@@ -9,6 +9,7 @@ import streamlit as st
 from db import get_session, init_db
 from services.profile_filter_service import get_active_filter_role, list_profile_filters
 from ui.data import cached_profile_id, clear_data_cache
+from ui.workflow import start_resume_upload
 
 
 def get_selected_profile_role() -> str | None:
