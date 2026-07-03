@@ -3,16 +3,11 @@
 
 from __future__ import annotations
 
-import json
-import sys
-from pathlib import Path
-
-ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT / "src"))
-
 import config
 from db import get_session, init_db
+from db.vacancy_data_migrate import run_vacancy_data_migration
 from services.profile_service import get_latest_profile, parse_resume_file
+from services.profile_serialization import loads_json
 from services.search_service import get_active_search_settings, settings_to_queries, suggest_search_settings
 
 
@@ -26,8 +21,11 @@ def main() -> None:
 
     # 1. Миграция вакансий
     print("\n[1/3] Миграция вакансий...")
-    import subprocess
-    subprocess.run([sys.executable, str(ROOT / "scripts" / "migrate_vacancies.py")], check=True)
+    stats = run_vacancy_data_migration()
+    print(
+        f"   Rows: {stats['rows']}, normalized sources: {stats['normalized_sources']}, "
+        f"work_format filled: {stats['work_format_filled']}"
+    )
 
     # 2. Профиль
     print("\n[2/3] Парсинг резюме...")
@@ -56,10 +54,10 @@ def main() -> None:
     queries = settings_to_queries(settings)
 
     print(f"✅ SearchSettings #{settings.id}")
-    print(f"   Titles: {json.loads(settings.desired_titles_json or '[]')}")
+    print(f"   Titles: {loads_json(settings.desired_titles_json, [])}")
     print(f"   Salary: {settings.salary_min}–{settings.salary_max} {settings.salary_currency}")
-    print(f"   Include: {json.loads(settings.keywords_include_json or '[]')[:5]}")
-    print(f"   Exclude: {json.loads(settings.keywords_exclude_json or '[]')}")
+    print(f"   Include: {loads_json(settings.keywords_include_json, [])[:5]}")
+    print(f"   Exclude: {loads_json(settings.keywords_exclude_json, [])}")
     print(f"\n   HH queries ({len(queries)}):")
     for q in queries:
         print(f"     - {q}")

@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from db.models import Company, Skill, Vacancy, VacancySkill
 from db.repositories.metrics_repo import get_daily_metrics, vacancy_stats
+from time_utils import utc_now
 
 STACK_KEYWORDS = [
     "jira", "confluence", "figma", "sql", "python", "tableau", "power bi",
@@ -88,7 +89,7 @@ def build_analytics(session: Session, criteria: dict | None = None) -> dict:
         })
 
     return {
-        "generated_at": datetime.utcnow().isoformat(),
+        "generated_at": utc_now().isoformat(),
         "summary": {
             "total": stats["total"] or 0,
             "fit": stats["fit"] or 0,

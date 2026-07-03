@@ -14,6 +14,7 @@ from ai.providers import GroqClient, OllamaClient, YandexGPTClient
 from ai.providers.base import BaseAIProvider
 from ai.routing import FALLBACK_CHAIN, TASK_ROUTING
 from ai.schemas.result import AIResult
+from ai.task_prompts import build_task_prompt
 from ai.usage_tracker import UsageTracker
 
 logger = logging.getLogger(__name__)
@@ -43,92 +44,10 @@ class AIRouter:
         return chain
 
     def _build_prompt(self, task_type: str, payload: dict[str, Any]) -> tuple[str, str | None]:
-        if task_type == "parse_resume":
-            from ai.prompts.parse_resume import PARSE_RESUME_PROMPT, PARSE_RESUME_SYSTEM
-
-            return (
-                PARSE_RESUME_PROMPT.format(resume_text=payload.get("resume_text", "")),
-                PARSE_RESUME_SYSTEM,
-            )
-        if task_type == "analyze_resume_ru":
-            from ai.prompts.parse_resume import ANALYZE_RESUME_RU_PROMPT, ANALYZE_RESUME_RU_SYSTEM
-
-            return (
-                ANALYZE_RESUME_RU_PROMPT.format(resume_text=payload.get("resume_text", "")),
-                ANALYZE_RESUME_RU_SYSTEM,
-            )
-        if task_type == "suggest_filters":
-            from ai.prompts.suggest_filters import SUGGEST_FILTERS_PROMPT, SUGGEST_FILTERS_SYSTEM
-
-            return (
-                SUGGEST_FILTERS_PROMPT.format(profile_json=payload.get("profile_json", "{}")),
-                SUGGEST_FILTERS_SYSTEM,
-            )
-        if task_type == "fast_match":
-            from ai.prompts.match_vacancy import FAST_MATCH_PROMPT, FAST_MATCH_SYSTEM
-
-            return (
-                FAST_MATCH_PROMPT.format(
-                    profile_json=payload.get("profile_json", "{}"),
-                    vacancy_json=payload.get("vacancy_json", "{}"),
-                ),
-                FAST_MATCH_SYSTEM,
-            )
-        if task_type == "match_vacancy_deep":
-            from ai.prompts.match_vacancy import DEEP_MATCH_PROMPT, DEEP_MATCH_SYSTEM
-
-            return (
-                DEEP_MATCH_PROMPT.format(
-                    profile_json=payload.get("profile_json", "{}"),
-                    vacancy_json=payload.get("vacancy_json", "{}"),
-                ),
-                DEEP_MATCH_SYSTEM,
-            )
-        if task_type == "generate_cover_letter":
-            import json
-
-            from ai.prompts.cover_letter import (
-                COVER_LETTER_EXAMPLE,
-                COVER_LETTER_SYSTEM,
-                ROLE_SKILL_GUIDANCE,
-                TARGET_ROLE_LABELS,
-                format_cover_letter_prompt,
-            )
-
-            target_role = payload.get("target_role", "general")
-            profile_data = json.loads(payload.get("profile_json", "{}"))
-            return (
-                format_cover_letter_prompt(
-                    example=COVER_LETTER_EXAMPLE,
-                    target_role_label=TARGET_ROLE_LABELS.get(
-                        target_role, TARGET_ROLE_LABELS["general"]
-                    ),
-                    role_guidance=ROLE_SKILL_GUIDANCE.get(
-                        target_role, ROLE_SKILL_GUIDANCE["general"]
-                    ),
-                    candidate_first_name=profile_data.get("first_name", "кандидат"),
-                    candidate_role_title=profile_data.get("role_title", "специалист"),
-                    profile_json=payload.get("profile_json", "{}"),
-                    vacancy_json=payload.get("vacancy_json", "{}"),
-                    match_context_json=payload.get("match_context_json", "{}"),
-                ),
-                COVER_LETTER_SYSTEM,
-            )
-        if task_type == "improve_resume":
-            from ai.prompts.improve_resume import IMPROVE_RESUME_PROMPT, IMPROVE_RESUME_SYSTEM
-
-            return (
-                IMPROVE_RESUME_PROMPT.format(
-                    resume_text=payload.get("resume_text", ""),
-                    profile_json=payload.get("profile_json", "{}"),
-                    market_requirements_json=payload.get("market_requirements_json", "{}"),
-                    vacancy_count=payload.get("vacancy_count", 0),
-                ),
-                IMPROVE_RESUME_SYSTEM,
-            )
-        if "prompt" in payload:
-            return payload["prompt"], payload.get("system")
-        raise AIRouterError(f"Неизвестный payload для задачи {task_type}")
+        try:
+            return build_task_prompt(task_type, payload)
+        except ValueError as exc:
+            raise AIRouterError(str(exc)) from exc
 
     @staticmethod
     def _extract_json(content: str) -> dict[str, Any] | None:

@@ -1,23 +1,20 @@
 #!/usr/bin/env python3
-"""Инициализация таблиц SQLAlchemy в SQLite."""
+"""Инициализация таблиц SQLAlchemy в SQLite (Alembic)."""
 
 from __future__ import annotations
 
-import sys
-from pathlib import Path
+from sqlalchemy import inspect
 
-ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT / "src"))
-
-from db import init_db, get_engine
-from db.models import Base
+from db import get_engine, init_db
+from db.tables import Base
 
 
 def main() -> None:
+    init_db()
     engine = get_engine()
-    Base.metadata.create_all(bind=engine)
-    tables = sorted(Base.metadata.tables.keys())
-    print("✅ SQLAlchemy tables ready:")
+    existing = set(inspect(engine).get_table_names())
+    tables = sorted(name for name in Base.metadata.tables if name in existing)
+    print("✅ Database schema ready (alembic head):")
     for name in tables:
         print(f"  - {name}")
     print(f"\nDB: {engine.url}")

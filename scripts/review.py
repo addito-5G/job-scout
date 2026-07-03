@@ -4,25 +4,14 @@
 from __future__ import annotations
 
 import argparse
-import json
-import sys
-from pathlib import Path
 
-import yaml
 
-ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT / "src"))
-
+from config_loader import load_criteria
 from db import get_session, init_db
-from db.repositories.vacancy_repo import get_vacancy_by_id
+from db.repositories.vacancy_repo import get_vacancy_by_id, get_vacancy_skills
 from services.cover_letter_service import generate_cover_letter
 from services.profile_service import get_latest_profile
 from services.vacancy_service import list_for_review, update_vacancy_status
-
-
-def load_criteria() -> dict:
-    with (ROOT / "config" / "criteria.yaml").open(encoding="utf-8") as f:
-        return yaml.safe_load(f) or {}
 
 
 def cmd_list(args: argparse.Namespace) -> None:
@@ -48,10 +37,13 @@ def cmd_list(args: argparse.Namespace) -> None:
 def cmd_show(args: argparse.Namespace) -> None:
     session = get_session()
     row = get_vacancy_by_id(session, args.id)
-    session.close()
     if not row:
+        session.close()
         print("Не найдено")
         return
+    skills = get_vacancy_skills(session, row.id)
+    session.close()
+
     print(f"# {row.title}\n")
     print(f"Компания: {row.company_rel.name if row.company_rel else '—'}")
     print(f"Score: {row.rule_score} ({row.rule_score_reasons})")
@@ -60,10 +52,8 @@ def cmd_show(args: argparse.Namespace) -> None:
         print(f"ЗП: {row.salary_text}")
     if row.employment:
         print(f"Занятость: {row.employment} · {row.schedule or ''} · {row.experience_required or ''}")
-    from db.repositories.vacancy_repo import get_vacancy_skills
-    sk = get_vacancy_skills(session, row.id)
-    if sk:
-        print(f"Навыки: {', '.join(sk)}")
+    if skills:
+        print(f"Навыки: {', '.join(skills)}")
     print()
     text = row.description_full or row.description_short or ""
     print(text[:3000] if text else "(нет описания)")

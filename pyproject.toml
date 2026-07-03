@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "job-scout"
+version = "0.1.0"
+description = "NextMove — AI Career Copilot"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "feedparser>=6.0",
+    "requests>=2.31",
+    "pyyaml>=6.0",
+    "python-dotenv>=1.0",
+    "sqlalchemy>=2.0",
+    "pydantic>=2.5",
+    "ollama>=0.4",
+    "groq>=0.9",
+    "PyJWT>=2.8",
+    "cryptography>=42.0",
+    "streamlit>=1.32",
+    "plotly>=5.18",
+    "alembic>=1.13",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+py-modules = ["config", "models", "scoring", "analytics", "enricher", "config_loader", "cli_logging", "time_utils"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src", "."]

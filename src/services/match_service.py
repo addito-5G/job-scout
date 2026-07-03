@@ -11,31 +11,10 @@ from ai.schemas.match import VacancyMatchSchema
 from db.models import CandidateProfile, Vacancy
 from db.repositories.match_repo import upsert_match
 from db.repositories.vacancy_repo import get_vacancy_skills, list_for_matching
+from services.profile_serialization import to_match_json as profile_to_json
 from services.profile_service import get_latest_profile
 
 logger = logging.getLogger(__name__)
-
-
-def profile_to_json(profile: CandidateProfile) -> str:
-    def loads(raw):
-        try:
-            return json.loads(raw or "[]")
-        except json.JSONDecodeError:
-            return []
-
-    data = {
-        "full_name": profile.full_name,
-        "title": profile.title,
-        "experience_years": profile.experience_years,
-        "skills": loads(profile.skills_json),
-        "strengths": loads(profile.strengths_json),
-        "weaknesses": loads(profile.weaknesses_json),
-        "recommended_roles": loads(profile.recommended_roles_json),
-        "ai_summary": profile.ai_summary,
-        "salary_min": profile.salary_min,
-        "salary_max": profile.salary_max,
-    }
-    return json.dumps(data, ensure_ascii=False)
 
 
 def vacancy_to_json(session: Session, vacancy: Vacancy) -> str:

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from sqlalchemy import func, not_, or_, select
 from sqlalchemy.exc import IntegrityError
@@ -16,10 +16,10 @@ from db.entities import (
     upsert_company,
     upsert_location,
 )
-from db.models import Company, SearchSettings, Skill, Vacancy, VacancyMatch, VacancySkill, VacancyTag
+from db.models import Company, Skill, Vacancy, VacancyMatch, VacancySkill, VacancyTag
 from db.normalize import normalize_source, normalize_work_format, normalize_experience, parse_datetime
 from models import Vacancy as VacancyDTO
-from services.profile_filter_service import infer_role_from_settings
+from time_utils import utc_now
 
 
 def _json_dump(data) -> str | None:
@@ -28,7 +28,13 @@ def _json_dump(data) -> str | None:
     return json.dumps(data, ensure_ascii=False)
 
 
-def upsert_vacancy(session: Session, v: VacancyDTO, *, search_settings_id: int | None = None) -> tuple[int, bool]:
+def upsert_vacancy(
+    session: Session,
+    v: VacancyDTO,
+    *,
+    search_settings_id: int | None = None,
+    profile_role: str | None = None,
+) -> tuple[int, bool]:
     source = normalize_source(v.source)
     external_id = v.external_id
     external_url = v.url or f"{source}:{external_id}"
@@ -91,15 +97,12 @@ def upsert_vacancy(session: Session, v: VacancyDTO, *, search_settings_id: int |
         "enriched_at": enriched,
         "rule_score": v.score or 0,
         "rule_score_reasons": "; ".join(v.score_reasons) if v.score_reasons else None,
-        "updated_at": datetime.utcnow(),
+        "updated_at": utc_now(),
     }
     if search_settings_id is not None:
         fields["search_settings_id"] = search_settings_id
-        settings = session.get(SearchSettings, search_settings_id)
-        if settings:
-            role = infer_role_from_settings(settings)
-            if role:
-                fields["profile_role"] = role
+    if profile_role is not None:
+        fields["profile_role"] = profile_role
 
     is_new = existing is None
     if existing:
@@ -110,10 +113,10 @@ def upsert_vacancy(session: Session, v: VacancyDTO, *, search_settings_id: int |
         for key, value in fields.items():
             setattr(existing, key, value)
         if desc_full:
-            existing.enriched_at = enriched or datetime.utcnow()
+            existing.enriched_at = enriched or utc_now()
         row = existing
     else:
-        row = Vacancy(source=source, external_id=external_id, scraped_at=datetime.utcnow(), **fields)
+        row = Vacancy(source=source, external_id=external_id, scraped_at=utc_now(), **fields)
         session.add(row)
 
     try:
@@ -135,7 +138,7 @@ def upsert_vacancy(session: Session, v: VacancyDTO, *, search_settings_id: int |
         by_url.source = source
         by_url.external_id = external_id
         if desc_full:
-            by_url.enriched_at = enriched or datetime.utcnow()
+            by_url.enriched_at = enriched or utc_now()
         session.flush()
         sync_vacancy_skills(session, by_url.id, v.skills)
         sync_vacancy_tags(session, by_url.id, tags)
@@ -159,6 +162,16 @@ def get_vacancy_by_id(session: Session, vacancy_id: int) -> Vacancy | None:
 
 def count_vacancies(session: Session) -> int:
     return session.execute(select(func.count()).select_from(Vacancy)).scalar_one()
+
+
+def count_new_vacancies(session: Session, days: int) -> int:
+    """Вакансии, опубликованные или собранные за последние N дней."""
+    since = utc_now() - timedelta(days=days)
+    return session.execute(
+        select(func.count())
+        .select_from(Vacancy)
+        .where(or_(Vacancy.published_at >= since, Vacancy.scraped_at >= since))
+    ).scalar_one()
 
 
 def get_vacancy_skills(session: Session, vacancy_id: int) -> list[str]:
@@ -241,7 +254,7 @@ def apply_enrichment(session: Session, vacancy: Vacancy, detail: dict) -> Vacanc
         work_format=detail.get("work_format") or vacancy.work_format,
         experience=detail.get("experience") or vacancy.experience_required or "",
         user_status=vacancy.user_status,
-        enriched_at=datetime.utcnow(),
+        enriched_at=utc_now(),
     )
     upsert_vacancy(session, dto)
     return get_vacancy_by_id(session, vacancy.id) or vacancy

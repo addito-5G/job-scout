@@ -1,6 +1,7 @@
 #!/bin/bash
 cd "$(dirname "$0")"
 source venv/bin/activate
+pip install -e . -q
 python scripts/scan.py
 python scripts/match.py --limit 50
 echo ""

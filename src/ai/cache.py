@@ -12,6 +12,7 @@ import config
 from ai.routing import CACHE_TTL_DAYS
 from ai.schemas.result import AIResult
 from db.models import AICache
+from time_utils import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +30,7 @@ class AICacheStore:
         return CACHE_TTL_DAYS.get(task_type, CACHE_TTL_DAYS["default"])
 
     def get(self, cache_key: str) -> AIResult | None:
-        now = datetime.utcnow()
+        now = utc_now()
         row = self.session.execute(
             select(AICache).where(AICache.cache_key == cache_key)
         ).scalar_one_or_none()
@@ -54,7 +55,7 @@ class AICacheStore:
 
     def set(self, cache_key: str, task_type: str, result: AIResult) -> None:
         ttl = self._ttl_days(task_type)
-        expires_at = datetime.utcnow() + timedelta(days=ttl)
+        expires_at = utc_now() + timedelta(days=ttl)
         payload = json.dumps(result.to_cache_dict(), ensure_ascii=False)
 
         row = self.session.execute(
@@ -67,7 +68,7 @@ class AICacheStore:
             row.response = payload
             row.tokens_used = result.total_tokens
             row.expires_at = expires_at
-            row.created_at = datetime.utcnow()
+            row.created_at = utc_now()
         else:
             self.session.add(
                 AICache(
@@ -89,7 +90,7 @@ class AICacheStore:
         expired_only: bool = False,
     ) -> int:
         """Принудительная очистка кэша. Возвращает число удалённых записей."""
-        now = datetime.utcnow()
+        now = utc_now()
         stmt = delete(AICache)
 
         if task_type:
@@ -113,7 +114,7 @@ class AICacheStore:
 
     def stats(self) -> dict:
         total = self.session.execute(select(func.count(AICache.id))).scalar() or 0
-        now = datetime.utcnow()
+        now = utc_now()
         expired = self.session.execute(
             select(func.count(AICache.id)).where(AICache.expires_at < now)
         ).scalar() or 0

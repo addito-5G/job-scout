@@ -14,6 +14,7 @@ from db.models import (
     init_db,
     resolve_database_url,
 )
+from db.session_scope import session_scope
 
 __all__ = [
     "AICache",
@@ -30,4 +31,5 @@ __all__ = [
     "get_session_factory",
     "init_db",
     "resolve_database_url",
+    "session_scope",
 ]

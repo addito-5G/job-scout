@@ -4,24 +4,14 @@
 from __future__ import annotations
 
 import argparse
-import logging
-import sys
-from pathlib import Path
 
-import yaml
 
-ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT / "src"))
-
+from cli_logging import setup_cli_logging
+from config_loader import load_criteria_with_browser
 from db import init_db
 from enricher import enrich_vacancies
 
-logging.basicConfig(level=logging.INFO, format="%(message)s")
-
-
-def load_yaml(path: Path) -> dict:
-    with path.open(encoding="utf-8") as f:
-        return yaml.safe_load(f) or {}
+logger = setup_cli_logging()
 
 
 def main() -> None:
@@ -30,9 +20,8 @@ def main() -> None:
     parser.add_argument("--min-score", type=int, default=None)
     args = parser.parse_args()
 
-    criteria = load_yaml(ROOT / "config" / "criteria.yaml")
-    raw_sources = load_yaml(ROOT / "config" / "sources.yaml")
-    browser = raw_sources.get("browser", {})
+    criteria = load_criteria_with_browser()
+    browser = criteria.get("browser", {})
 
     limit = args.limit if args.limit is not None else int(browser.get("enrich_limit", 30))
     min_score = args.min_score if args.min_score is not None else int(
@@ -40,7 +29,6 @@ def main() -> None:
     )
     delay = float(browser.get("delay_seconds", 2))
 
-    criteria["browser"] = browser
     init_db()
 
     print(f"→ Обогащение до {limit} вакансий (score≥{min_score})...")

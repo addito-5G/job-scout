@@ -5,13 +5,10 @@ from __future__ import annotations
 
 import argparse
 import json
-import sys
-from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT / "src"))
 
 import config
+from services.profile_serialization import loads_json
 from ai import AIRouter
 from db import get_session, init_db
 from services.profile_service import get_latest_profile, parse_resume_file
@@ -61,8 +58,8 @@ def main() -> None:
 
     print("\n📋 Cache stats:", router.cache.stats())
 
-    skills = json.loads(profile.skills or "[]")
-    strengths = json.loads(profile.strengths or "[]")
+    skills = loads_json(profile.skills_json, [])
+    strengths = loads_json(profile.strengths_json, [])
     print(f"\nSkills ({len(skills)}): {', '.join(skills[:8])}...")
     print(f"Strengths: {strengths[:3]}")
 

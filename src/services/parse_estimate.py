@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
-import yaml
-
-import config
+from config_loader import load_sources
 
 
 def estimate_parse_seconds() -> int:
-    raw = yaml.safe_load((config.ROOT / "config" / "sources.yaml").read_text(encoding="utf-8")) or {}
+    raw = load_sources()
     browser = raw.get("browser", {})
     delay = float(browser.get("delay_seconds", 2))
     sources_cfg = raw.get("sources", {})

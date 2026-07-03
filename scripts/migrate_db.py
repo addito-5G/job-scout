@@ -6,12 +6,7 @@ from __future__ import annotations
 import json
 import shutil
 import sqlite3
-import sys
 from datetime import datetime
-from pathlib import Path
-
-ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT / "src"))
 
 import config
 from db import get_session, init_db

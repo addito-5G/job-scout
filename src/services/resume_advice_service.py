@@ -13,7 +13,7 @@ from db.normalize import experience_label, work_format_label
 from services.dashboard_service import top_skills
 from services.profile_filter_service import vacancy_scope_condition
 from services.profile_service import get_latest_profile
-from services.search_service import _loads, _profile_to_dict
+from services.profile_serialization import loads_json, to_search_dict
 
 
 def _vacancy_base(session: Session, profile_role: str | None):
@@ -129,8 +129,8 @@ def generate_resume_advice(
     if market["vacancy_count"] < 5:
         raise ValueError("Мало вакансий для выбранного профиля. Запустите парсинг или смените фильтр.")
 
-    profile_data = _profile_to_dict(profile)
-    profile_data["target_titles"] = _loads(profile.recommended_roles_json, [])
+    profile_data = to_search_dict(profile)
+    profile_data["target_titles"] = loads_json(profile.recommended_roles_json, [])
     if profile.title and profile.title not in profile_data["target_titles"]:
         profile_data["target_titles"] = [profile.title, *profile_data["target_titles"]]
 

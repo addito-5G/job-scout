@@ -10,6 +10,7 @@ from ai.ai_router import AIRouterError
 from ai.prompts.cover_letter import COVER_LETTER_PROMPT_VERSION
 from db.models import CandidateProfile, Vacancy
 from db.repositories.match_repo import get_match, save_cover_letter_draft
+from domain.role import infer_target_role
 from services.cover_letter_context import (
     first_name_from,
     match_context_for_cover_letter,
@@ -17,39 +18,10 @@ from services.cover_letter_context import (
 )
 from services.match_service import vacancy_to_json
 
+# Re-export для обратной совместимости.
+__all__ = ["infer_target_role", "generate_cover_letter", "normalize_cover_letter"]
+
 _CONTACTS_LINE_RE = re.compile(r"^\s*мои контакты\s*:", re.IGNORECASE)
-
-
-def infer_target_role(vacancy_title: str) -> str:
-    title = (vacancy_title or "").lower().replace("ё", "е")
-    if any(
-        k in title
-        for k in (
-            "product manager",
-            "product owner",
-            "продакт-менеджер",
-            "продакт менеджер",
-            "продуктовый менеджер",
-            "менеджер продукта",
-            "product lead",
-            "head of product",
-        )
-    ):
-        return "product_manager"
-    if any(
-        k in title
-        for k in (
-            "product analyst",
-            "продуктовый аналитик",
-            "продакт-аналитик",
-            "продакт аналитик",
-            "product analytics",
-        )
-    ):
-        return "product_analyst"
-    if re.search(r"\bpo\b", title) or re.search(r"\bpm\b", title):
-        return "product_manager"
-    return "general"
 
 
 def _get_match_for_letter(session: Session, vacancy_id: int, profile_id: int):
@@ -144,6 +116,11 @@ def _normalize_letter(letter: str, profile: CandidateProfile) -> str:
         letter = re.sub(pattern, "", letter, flags=re.IGNORECASE)
 
     return re.sub(r"\n{3,}", "\n\n", letter).strip()
+
+
+def normalize_cover_letter(letter: str, profile: CandidateProfile) -> str:
+    """Публичная обёртка над post-processing письма (v8, без изменения логики)."""
+    return _normalize_letter(letter, profile)
 
 
 def _append_contacts(letter: str) -> str:

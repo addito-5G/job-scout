@@ -7,11 +7,12 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from db.models import ScanRun
+from time_utils import utc_now
 
 
 def start_scan_run(session: Session, *, profile_id: int | None = None, settings_id: int | None = None) -> int:
     row = ScanRun(
-        started_at=datetime.utcnow(),
+        started_at=utc_now(),
         profile_id=profile_id,
         search_settings_id=settings_id,
         status="running",
@@ -44,7 +45,7 @@ def finish_scan_run(
     row = session.get(ScanRun, run_id)
     if not row:
         return
-    row.finished_at = datetime.utcnow()
+    row.finished_at = utc_now()
     if row.started_at and row.finished_at:
         row.duration_seconds = int((row.finished_at - row.started_at).total_seconds())
     row.total_found = scraped if scraped is not None else total_found
@@ -78,7 +79,7 @@ def is_scan_running(session: Session) -> bool:
     ).scalar_one_or_none()
     if not row:
         return False
-    if row.started_at and (datetime.utcnow() - row.started_at).total_seconds() > 7200:
+    if row.started_at and (utc_now() - row.started_at).total_seconds() > 7200:
         finish_scan_run(session, row.id, status="failed", error_log="timeout")
         return False
     return True

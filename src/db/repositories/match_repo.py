@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from db.models import VacancyMatch
+from time_utils import utc_now
 
 
 def upsert_match(
@@ -33,7 +34,7 @@ def upsert_match(
         "recommendation": data.get("recommendation"),
         "recommendation_reason": data.get("match_summary") or data.get("recommendation_reason"),
         "ai_analysis": data.get("deep_analysis") or data.get("match_summary", ""),
-        "analyzed_at": datetime.utcnow(),
+        "analyzed_at": utc_now(),
     }
 
     if row:

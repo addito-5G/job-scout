@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import re
 from typing import Any
 
 from sqlalchemy import func, select
@@ -10,44 +9,24 @@ from sqlalchemy.orm import Session
 from sqlalchemy.sql.elements import ColumnElement
 
 from db.models import CandidateProfile, ScanRun, SearchSettings, Vacancy
-from services.search_service import _loads
-
-ROLE_PRODUCT_ANALYST = "product_analyst"
-ROLE_PRODUCT_MANAGER = "product_manager"
-
-ANALYST_TITLE_KW = (
-    "аналитик",
-    "analyst",
-    "data analyst",
-    "bi analyst",
-    "продуктовый аналитик",
-    "product analyst",
+from domain.role import (
+    DEFAULT_ROLE_LABELS,
+    ROLE_PRODUCT_ANALYST,
+    ROLE_PRODUCT_MANAGER,
+    infer_role_from_title,
+    role_label,
 )
-PM_TITLE_KW = (
-    "product manager",
-    "продакт",
-    "product owner",
-    "lead product",
-    "head of product",
-    "growth manager",
-    "growth product",
-)
+from services.profile_serialization import loads_json as _loads
 
-DEFAULT_ROLE_LABELS = {
-    ROLE_PRODUCT_ANALYST: "Продуктовый аналитик",
-    ROLE_PRODUCT_MANAGER: "Product Manager",
-}
-
-
-def infer_role_from_title(title: str | None) -> str | None:
-    if not title:
-        return None
-    low = title.lower()
-    if any(k in low for k in ANALYST_TITLE_KW):
-        return ROLE_PRODUCT_ANALYST
-    if any(k in low for k in PM_TITLE_KW):
-        return ROLE_PRODUCT_MANAGER
-    return None
+# Re-export для обратной совместимости.
+__all__ = [
+    "ROLE_PRODUCT_ANALYST",
+    "ROLE_PRODUCT_MANAGER",
+    "DEFAULT_ROLE_LABELS",
+    "infer_role_from_title",
+    "infer_role_from_settings",
+    "role_label",
+]
 
 
 def infer_role_from_settings(settings: SearchSettings) -> str | None:
@@ -71,10 +50,6 @@ def settings_label(settings: SearchSettings) -> str:
     if settings.profile_label:
         return settings.profile_label
     return f"Профиль #{settings.id}"
-
-
-def role_label(role: str) -> str:
-    return DEFAULT_ROLE_LABELS.get(role, role.replace("_", " ").title())
 
 
 def list_profile_filters(session: Session, profile_id: int) -> list[dict[str, Any]]:

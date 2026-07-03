@@ -7,31 +7,7 @@ from sqlalchemy.orm import Session
 
 from ai import AIRouter
 from db.models import CandidateProfile, SearchSettings
-
-
-def _loads(raw: str | None, default):
-    if not raw:
-        return default
-    try:
-        return json.loads(raw)
-    except json.JSONDecodeError:
-        return default
-
-
-def _profile_to_dict(profile: CandidateProfile) -> dict:
-    return {
-        "full_name": profile.full_name,
-        "title": profile.title,
-        "experience_years": profile.experience_years,
-        "skills": _loads(profile.skills_json, []),
-        "strengths": _loads(profile.strengths_json, []),
-        "weaknesses": _loads(profile.weaknesses_json, []),
-        "recommended_roles": _loads(profile.recommended_roles_json, []),
-        "salary_min": profile.salary_min,
-        "salary_max": profile.salary_max,
-        "salary_currency": profile.salary_currency,
-        "ai_summary": profile.ai_summary,
-    }
+from services.profile_serialization import loads_json as _loads, to_search_dict as _profile_to_dict
 
 
 def _defaults_from_profile(profile: CandidateProfile) -> dict:

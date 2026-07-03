@@ -4,17 +4,13 @@
 from __future__ import annotations
 
 import argparse
-import logging
-import sys
-from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT / "src"))
 
+from cli_logging import setup_cli_logging
 from db import get_session, init_db
 from services.scan_service import run_scan
 
-logging.basicConfig(level=logging.INFO, format="%(message)s")
+logger = setup_cli_logging()
 
 
 def main() -> None:

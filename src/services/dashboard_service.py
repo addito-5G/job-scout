@@ -9,8 +9,9 @@ from sqlalchemy.orm import Session
 
 from db.models import Company, Skill, Vacancy, VacancyMatch, VacancySkill
 from db.normalize import experience_label, work_format_label
+from db.repositories.vacancy_repo import count_new_vacancies
 from services.profile_filter_service import vacancy_scope_condition
-from services.vacancy_service import count_new_vacancies
+from time_utils import utc_now
 
 
 def _scope(profile_role: str | None) -> list:
@@ -108,7 +109,7 @@ def vacancy_timeline(
     *,
     profile_role: str | None = None,
 ) -> list[tuple[str, int]]:
-    since = datetime.utcnow() - timedelta(days=days)
+    since = utc_now() - timedelta(days=days)
     rows = session.execute(
         select(Vacancy.published_at, Vacancy.scraped_at).where(
             or_(Vacancy.published_at >= since, Vacancy.scraped_at >= since),

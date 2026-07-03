@@ -1,4 +1,4 @@
-"""Лёгкие миграции схемы без Alembic."""
+"""Лёгкие миграции схемы без Alembic (legacy; новые изменения — через alembic/versions/)."""
 
 from __future__ import annotations
 

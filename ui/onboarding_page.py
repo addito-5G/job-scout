@@ -2,13 +2,9 @@
 
 from __future__ import annotations
 
-import sys
-from pathlib import Path
 
 import streamlit as st
 
-ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT / "src"))
 
 from ui.workflow import go_to
 

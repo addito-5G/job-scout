@@ -21,7 +21,7 @@ echo "   Запуск: каждый день в 09:00 (локальное вре
 echo "   Лог: $LOG_DIR/cron.log"
 echo ""
 echo "Проверка вручную:"
-echo "  cd $ROOT && source venv/bin/activate && python scripts/daily_update.py --trigger scheduled"
+echo "  cd $ROOT && source venv/bin/activate && pip install -e . -q && python scripts/daily_update.py --trigger scheduled"
 echo ""
 echo "Удалить расписание:"
 echo "  launchctl bootout gui/$(id -u)/com.jobscout.daily"

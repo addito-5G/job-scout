@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from pathlib import Path
 
-import config
+from config_loader import load_criteria, load_sources
 from adapters.registry import build_adapters
 from scoring import score_vacancy
 from services.profile_service import get_latest_profile
@@ -27,11 +26,6 @@ class ScanResult:
     errors: list[str] = field(default_factory=list)
 
 
-def _load_yaml(path: Path) -> dict:
-    with path.open(encoding="utf-8") as f:
-        return yaml.safe_load(f) or {}
-
-
 def run_scan(
     session: Session,
     *,
@@ -43,8 +37,8 @@ def run_scan(
     display_min: int | None = None,
     progress: ScanProgressFn | None = None,
 ) -> ScanResult:
-    criteria = criteria or _load_yaml(config.ROOT / "config" / "criteria.yaml")
-    raw_sources = raw_sources or _load_yaml(config.ROOT / "config" / "sources.yaml")
+    criteria = criteria or load_criteria()
+    raw_sources = raw_sources or load_sources()
     sources = raw_sources.get("sources", raw_sources)
     browser = raw_sources.get("browser", {})
 

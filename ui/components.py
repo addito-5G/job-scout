@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import streamlit as st
 
+from ui.constants import recommendation_label
 from ui.design_system import COLORS
 from ui.navigation import source_label
 
@@ -75,9 +76,7 @@ def render_opportunity_card(item: dict, *, profile_id: int | None) -> None:
     wf = work_format_label(item.get("work_format"))
     source = source_label(item.get("source", "")) if item.get("source") else ""
     rec = item.get("recommendation") or ""
-    rec_label = {"apply": "Откликаться", "skip": "Пропустить", "improve_resume": "Усилить резюме"}.get(
-        rec, rec
-    )
+    rec_label = recommendation_label(rec, short=True)
 
     st.markdown(
         f'<div class="nm-card">'
@@ -117,21 +116,10 @@ def render_opportunity_card(item: dict, *, profile_id: int | None) -> None:
 
 
 def _set_status(vacancy_id: int, status: str) -> None:
-    import sys
-    from pathlib import Path
-
-    root = Path(__file__).resolve().parent.parent
-    sys.path.insert(0, str(root / "src"))
-    from db import get_session, init_db
-    from services.vacancy_service import update_vacancy_status
+    from services.vacancy_status_service import set_vacancy_status
     from ui.data import clear_data_cache
 
-    init_db()
-    session = get_session()
-    try:
-        update_vacancy_status(session, vacancy_id, status)
-    finally:
-        session.close()
+    set_vacancy_status(vacancy_id, status)
     clear_data_cache()
     st.toast("Сохранено", icon="✅")
     st.rerun()

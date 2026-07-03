@@ -5,29 +5,20 @@ from __future__ import annotations
 
 import argparse
 import json
-import logging
 import sys
 from datetime import date
-from pathlib import Path
 
-import yaml
-
-ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT / "src"))
-
+import config
 from analytics import build_analytics, snapshot_for_today
+from cli_logging import setup_cli_logging
+from config_loader import load_criteria_with_browser
 from db import get_session, init_db
 from db.repositories.metrics_repo import save_daily_metrics
 from enricher import enrich_vacancies
 from services.scheduled_job import run_scheduled_update
 from services.schedule_service import load_schedule
 
-logging.basicConfig(level=logging.INFO, format="%(message)s")
-
-
-def load_yaml(path: Path) -> dict:
-    with path.open(encoding="utf-8") as f:
-        return yaml.safe_load(f) or {}
+logger = setup_cli_logging()
 
 
 def main() -> None:
@@ -39,13 +30,11 @@ def main() -> None:
 
     schedule = load_schedule()
     if args.trigger == "scheduled" and not schedule.get("enabled", True):
-        print("Расписание выключено в config/schedule.yaml — выход")
+        logger.info("Расписание выключено в config/schedule.yaml — выход")
         return
 
-    criteria = load_yaml(ROOT / "config" / "criteria.yaml")
-    raw_sources = load_yaml(ROOT / "config" / "sources.yaml")
-    browser = raw_sources.get("browser", {})
-    criteria["browser"] = browser
+    criteria = load_criteria_with_browser()
+    browser = criteria.get("browser", {})
 
     init_db()
     session = get_session()
@@ -55,7 +44,7 @@ def main() -> None:
     scraped = 0
 
     if not args.skip_scan:
-        print("=== Scan + Match ===")
+        logger.info("=== Scan + Match ===")
         try:
             job = run_scheduled_update(
                 session=session,
@@ -65,16 +54,16 @@ def main() -> None:
             scraped = job.scraped
             matched = job.matched
             errors.extend(job.errors)
-            print(
+            logger.info(
                 f"Собрано {job.scraped} (новых {job.new_count}), "
                 f"матчинг {job.matched}, run_id={job.run_id}"
             )
         except Exception as exc:
             errors.append(str(exc))
-            print(f"⚠ scan/match failed: {exc}")
+            logger.warning(f"scan/match failed: {exc}")
 
     if not args.skip_enrich:
-        print("\n=== Enrich ===")
+        logger.info("\n=== Enrich ===")
         limit = int(browser.get("enrich_limit", 30))
         min_score = int(criteria.get("thresholds", {}).get("min_score", 0))
         try:
@@ -87,31 +76,31 @@ def main() -> None:
             errors.extend(enrich_errors)
         except Exception as exc:
             errors.append(str(exc))
-            print(f"⚠ enrich failed: {exc}")
+            logger.warning(f"enrich failed: {exc}")
 
-    print("\n=== Analytics ===")
+    logger.info("\n=== Analytics ===")
     try:
         analytics = build_analytics(session, criteria)
         snapshot = snapshot_for_today(analytics)
         save_daily_metrics(session, date.today().isoformat(), snapshot)
 
-        export_path = ROOT / "data" / "dashboard.json"
+        export_path = config.ROOT / "data" / "dashboard.json"
         export_path.parent.mkdir(parents=True, exist_ok=True)
         export_path.write_text(json.dumps(analytics, ensure_ascii=False, indent=2), encoding="utf-8")
-        print(f"Экспорт: {export_path}")
+        logger.info(f"Экспорт: {export_path}")
     except Exception as exc:
         errors.append(f"analytics: {exc}")
-        print(f"⚠ analytics failed: {exc}")
+        logger.warning(f"analytics failed: {exc}")
 
     session.close()
 
-    print(
+    logger.info(
         f"\nГотово: собрано {scraped}, матчинг {matched}, обогащено {enriched}"
     )
     if errors:
-        print("Ошибки:")
+        logger.info("Ошибки:")
         for err in errors[:5]:
-            print(f"  - {err}")
+            logger.info(f"  - {err}")
         sys.exit(1)
 
 

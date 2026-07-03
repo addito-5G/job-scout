@@ -3,16 +3,9 @@
 
 from __future__ import annotations
 
-import sys
-from pathlib import Path
-
 import streamlit as st
 
-ROOT = Path(__file__).resolve().parent
-sys.path.insert(0, str(ROOT / "src"))
-sys.path.insert(0, str(ROOT))
-
-from db import get_session, init_db
+from db import session_scope
 from services.profile_service import get_latest_profile
 from services.search_service import get_active_search_settings
 from ui.applications_page import render_applications
@@ -42,17 +35,13 @@ inject_design_system()
 
 
 def _bootstrap() -> tuple[bool, bool]:
-    init_db()
-    session = get_session()
-    try:
+    with session_scope() as session:
         profile = get_latest_profile(session)
         has_resume = bool(profile and profile.resume_raw)
         has_settings = bool(
             profile and get_active_search_settings(session, profile.id)
         )
         return has_resume, has_settings
-    finally:
-        session.close()
 
 
 def main() -> None:

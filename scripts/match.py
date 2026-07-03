@@ -5,26 +5,16 @@ from __future__ import annotations
 
 import argparse
 import json
-import logging
-import sys
-from pathlib import Path
 
-import yaml
 
-ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT / "src"))
-
+from cli_logging import setup_cli_logging
+from config_loader import load_criteria
 from db import get_session, init_db
+from db.repositories.vacancy_repo import get_vacancy_by_id
 from services.match_service import batch_fast_match, deep_match_vacancy
 from services.profile_service import get_latest_profile
-from db.repositories.vacancy_repo import get_vacancy_by_id
 
-logging.basicConfig(level=logging.INFO, format="%(message)s")
-
-
-def load_criteria() -> dict:
-    with (ROOT / "config" / "criteria.yaml").open(encoding="utf-8") as f:
-        return yaml.safe_load(f) or {}
+logger = setup_cli_logging()
 
 
 def main() -> None:

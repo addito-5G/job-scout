@@ -2,14 +2,10 @@
 
 from __future__ import annotations
 
-import sys
 import time
-from pathlib import Path
 
 import streamlit as st
 
-ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT / "src"))
 
 from services.refresh_service import refresh_vacancies
 from services.scan_progress import label_for

@@ -6,7 +6,7 @@ from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
 from db.models import DailyMetrics, Vacancy
-from services.vacancy_service import count_new_vacancies
+from db.repositories.vacancy_repo import count_new_vacancies
 
 
 def vacancy_stats(session: Session) -> dict:

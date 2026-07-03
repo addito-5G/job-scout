@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 import config
 from db.models import AIUsageLog
+from time_utils import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +42,7 @@ class UsageTracker:
         self._warn_threshold = config.USAGE_WARN_THRESHOLD
 
     def _today_start(self) -> datetime:
-        now = datetime.utcnow()
+        now = utc_now()
         return now.replace(hour=0, minute=0, second=0, microsecond=0)
 
     def _usage_today(self, provider: str) -> tuple[int, int]:

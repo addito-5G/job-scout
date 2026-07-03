@@ -2,12 +2,9 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Callable
 
-import yaml
-
-import config
+from config_loader import load_criteria, load_sources
 from db import get_session, init_db
 from db.repositories.scan_repo import finish_scan_run, start_scan_run
 from services.match_service import batch_fast_match
@@ -31,11 +28,6 @@ class ScheduledJobResult:
     errors: list[str] = field(default_factory=list)
     run_id: int | None = None
     status: str = "completed"
-
-
-def _load_yaml(path: Path) -> dict:
-    with path.open(encoding="utf-8") as f:
-        return yaml.safe_load(f) or {}
 
 
 def run_scheduled_update(
@@ -62,8 +54,8 @@ def run_scheduled_update(
 
     try:
         _progress(0.02, "Подготовка...", None)
-        criteria = _load_yaml(config.ROOT / "config" / "criteria.yaml")
-        raw_sources = _load_yaml(config.ROOT / "config" / "sources.yaml")
+        criteria = load_criteria()
+        raw_sources = load_sources()
         min_score = int(criteria.get("thresholds", {}).get("min_score", 0))
 
         profile = get_latest_profile(session)
