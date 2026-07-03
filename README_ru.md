@@ -69,11 +69,13 @@
 
 ```mermaid
 flowchart LR
-    R[Любое резюме .md] --> P[AI-профиль]
-    P --> K[Ключи поиска]
-    K --> SC[Скан hh / Habr / Geekjob]
-    SC --> DB[(SQLite)]
-    DB --> M[Match с профилем]
+    R[Резюме .md] --> P[Профиль кандидата]
+    P --> S[Настройки поиска]
+    HH[hh.ru] --> SC[Scan service]
+    HB[Habr] --> SC
+    GJ[Geekjob] --> SC
+    SC --> DB[(SQLite + Alembic)]
+    DB --> M[AI Match]
     M --> UI[NextMove UI]
     M --> CL[Сопроводительное]
 ```

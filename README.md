@@ -69,11 +69,13 @@ Pipeline: **scan → enrich → fast/deep match → cover letter**. Optional dai
 
 ```mermaid
 flowchart LR
-    R[Any resume .md] --> P[AI profile]
-    P --> K[Search keywords]
-    K --> SC[Scan hh / Habr / Geekjob]
-    SC --> DB[(SQLite)]
-    DB --> M[Match vs your profile]
+    R[Resume .md] --> P[Candidate profile]
+    P --> S[Search settings]
+    HH[hh.ru] --> SC[Scan service]
+    HB[Habr] --> SC
+    GJ[Geekjob] --> SC
+    SC --> DB[(SQLite + Alembic)]
+    DB --> M[AI Match]
     M --> UI[NextMove UI]
     M --> CL[Cover letter]
 ```
