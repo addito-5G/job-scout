@@ -1,84 +1,86 @@
+[Русский 🇷🇺](README_ru.md) / **English 🇺🇸**
+
 # Job Scout
 
-**Личный ассистент по поиску работы** — pet-project для сбора вакансий, AI-матчинга с резюме и аналитики рынка.
+**Personal job search assistant** — a pet project for collecting vacancies, AI matching against your resume, and market analytics.
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Streamlit](https://img.shields.io/badge/UI-Streamlit-FF4B4B.svg)](https://streamlit.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-> Сделано для собственного поиска работы (Product Manager). Это не SaaS и не автоотклик — только анализ, рекомендации и черновики сопроводительных.
+> Built for my own job search (Product Manager). This is not SaaS and not auto-apply — only analysis, recommendations, and cover letter drafts.
 
 ![Job Scout UI](docs/images/ui-preview.png)
 
 ---
 
-## Привет!
+## Hello!
 
-Этот репозиторий — мой личный инструмент в поиске работы: собрал для себя, выложил сюда, чтобы делиться с друзьями и коллегами.
+This repository is my personal tool for job hunting: I built it for myself and shared it here for friends and colleagues.
 
-Если вы тоже устали вручную мониторить hh.ru, Habr и Geekjob — заглядывайте, форкайте, пишите в [Issues](https://github.com/addito-5G/job-scout/issues) или в [Telegram](https://t.me/addito). Буду рад обратной связи и новым знакомствам.
-
----
-
-## Зачем это нужно
-
-При активном поиске работы я устал от одного и того же ручного цикла:
-
-- **Три площадки — три вкладки.** hh.ru, Habr Career, Geekjob. Каждое утро одно и то же: зайти, пробежать фильтры, выписать новое, не забыть то, что уже смотрел вчера.
-- **Смена роли — другой рынок.** Переход с продуктового аналитика на продакта — это не просто другое резюме. Другие ключевые слова, другие навыки в требованиях, другой срез по seniority. Старые сохранённые вакансии аналитика мешали видеть картину по PM.
-- **Сложно понять, «куда бить».** Резюме есть, вакансий сотни — но что рынок реально требует прямо сейчас? SQL и ClickHouse или unit economics и growth? Без агрегации это угадывание.
-- **Отклик отнимает время.** На каждую интересную вакансию — снова читать описание, сверять с опытом, набрасывать сопроводительное. На десятки позиций в неделю это выматывает.
-
-Job Scout закрывает эту боль: **один раз настроил профиль — дальше система сама собирает, фильтрует, оценивает и показывает, что требует рынок**. Я остаюсь на этапе принятия решения: откликаться или нет.
+If you're also tired of manually monitoring hh.ru, Habr, and Geekjob — take a look, fork it, and reach out via [Issues](https://github.com/addito-5G/job-scout/issues) or [Telegram](https://t.me/addito). I'd love your feedback and to connect with new people.
 
 ---
 
-## Что умеет
+## Why this exists
 
-| Модуль | Зачем |
-|--------|-------|
-| **Scan** | Парсинг hh.ru, Habr Career и Geekjob по AI-настройкам из резюме |
-| **Enrich** | Полное описание, навыки и зарплата со страницы вакансии (браузер, опционально) |
-| **Match** | Быстрый матч (Ollama) и глубокий (Groq/Yandex) — насколько вакансия бьётся с профилем |
-| **Фильтр по роли** | Вакансии аналитика и продакта в одной базе — переключатель в сайдбаре, без очистки БД |
-| **Дашборд** | Метрики, топ навыков, формат работы, динамика появления вакансий |
-| **Рекомендации к резюме** | Сравнение резюме с требованиями рынка; что усилить, чего не хватает |
-| **Cover letter** | Черновик сопроводительного под конкретную вакансию |
-| **Расписание** | Ежедневный авто-сбор в 09:00 (macOS launchd) — утром уже свежие данные |
+During an active job search, I got tired of the same manual loop:
 
-Автоотклик **намеренно не делается**: инструмент помогает сузить воронку и подготовить материалы, а не стрелять откликами вслепую.
+- **Three platforms — three tabs.** hh.ru, Habr Career, Geekjob. Every morning the same routine: log in, run through filters, note what's new, and don't forget what you already looked at yesterday.
+- **Role change — different market.** Moving from product analytics to product management isn't just a different resume. Different keywords, different skills in requirements, a different seniority slice. Old saved analyst vacancies cluttered the picture for PM roles.
+- **Hard to know where to focus.** You have a resume, hundreds of vacancies — but what does the market actually require right now? SQL and ClickHouse or unit economics and growth? Without aggregation, it's guesswork.
+- **Applying takes time.** For every interesting vacancy — read the description again, compare with your experience, draft a cover letter. Dozens of positions per week is exhausting.
+
+Job Scout addresses this pain: **set up your profile once — then the system collects, filters, scores, and shows what the market demands**. I stay at the decision stage: apply or not.
 
 ---
 
-## Как это работает
+## What it does
+
+| Module | Purpose |
+|--------|---------|
+| **Scan** | Parse hh.ru, Habr Career, and Geekjob using AI-driven settings from your resume |
+| **Enrich** | Full description, skills, and salary from the vacancy page (browser, optional) |
+| **Match** | Fast match (Ollama) and deep match (Groq/Yandex) — how well a vacancy fits your profile |
+| **Role filter** | Analyst and PM vacancies in one database — sidebar toggle, no DB wipe |
+| **Dashboard** | Metrics, top skills, work format, vacancy posting trends |
+| **Resume recommendations** | Compare your resume with market requirements; what to strengthen, what's missing |
+| **Cover letter** | Draft cover letter tailored to a specific vacancy |
+| **Schedule** | Daily auto-collection at 09:00 (macOS launchd) — fresh data in the morning |
+
+Auto-apply is **intentionally not implemented**: the tool helps narrow the funnel and prepare materials, not spray applications blindly.
+
+---
+
+## How it works
 
 ```mermaid
 flowchart LR
-    R[Резюме MD] --> P[Профиль]
-    P --> S[Настройки поиска]
-    HH[hh.ru] --> SC[Скан]
+    R[Resume MD] --> P[Profile]
+    P --> S[Search settings]
+    HH[hh.ru] --> SC[Scan]
     HB[Habr] --> SC
     GJ[Geekjob] --> SC
     SC --> DB[(SQLite)]
     S --> SC
-    DB --> EN[Обогащение]
+    DB --> EN[Enrich]
     EN --> M[AI Match]
     M --> UI[Streamlit UI]
 ```
 
 ### AI Router
 
-Задачи распределяются по провайдерам с fallback-цепочкой и кэшем в БД:
+Tasks are routed across providers with a fallback chain and DB cache:
 
-| Задача | Primary | Fallback |
+| Task | Primary | Fallback |
 |--------|---------|----------|
-| `parse_resume`, `fast_match` | **Ollama** (локально) | Yandex → Groq |
+| `parse_resume`, `fast_match` | **Ollama** (local) | Yandex → Groq |
 | `suggest_filters`, `cover_letter` | **YandexGPT** | Groq → Ollama |
 | `match_vacancy_deep`, `improve_resume` | **Groq** | Yandex → Ollama |
 
 ---
 
-## Быстрый старт
+## Quick start
 
 ```bash
 git clone https://github.com/addito-5G/job-scout.git
@@ -89,57 +91,57 @@ source venv/bin/activate
 pip install -r requirements.txt
 
 cp .env.example .env
-# Заполните GROQ_API_KEY, YC_FOLDER_ID; положите yandex_key.json для YandexGPT
+# Fill in GROQ_API_KEY, YC_FOLDER_ID; place yandex_key.json for YandexGPT
 
-cp browser_config.example.json browser_config.json  # опционально, для enrich
+cp browser_config.example.json browser_config.json  # optional, for enrich
 
 python scripts/init_db.py
 streamlit run app.py
 ```
 
-Откройте **http://localhost:8501** → загрузите резюме (`.md`) → настройте поиск → **«Обновить сейчас»** в сайдбаре.
+Open **http://localhost:8501** → upload your resume (`.md`) → configure search → **"Update now"** in the sidebar.
 
-### Опционально: обогащение и расписание
+### Optional: enrichment and scheduling
 
 ```bash
 pip install -r requirements-browser.txt
 python -m camoufox fetch
-bash scripts/install_schedule.sh   # ежедневно в 09:00, macOS
+bash scripts/install_schedule.sh   # daily at 09:00, macOS
 ```
 
 ---
 
-## Переменные окружения
+## Environment variables
 
-| Переменная | Назначение |
+| Variable | Purpose |
 |------------|------------|
-| `OLLAMA_MODEL` | Локальная модель (`qwen2.5:14b`) |
-| `GROQ_API_KEY` | Глубокий матч и рекомендации к резюме |
+| `OLLAMA_MODEL` | Local model (`qwen2.5:14b`) |
+| `GROQ_API_KEY` | Deep match and resume recommendations |
 | `YC_FOLDER_ID`, `YC_KEY_PATH` | YandexGPT |
-| `RESUME_PATH` | Путь к резюме по умолчанию |
+| `RESUME_PATH` | Default resume path |
 | `DATABASE_URL` | `sqlite:///./data/vacancies.db` |
 
-Полный список — в [`.env.example`](.env.example).
+Full list — in [`.env.example`](.env.example).
 
 ---
 
-## Структура проекта
+## Project structure
 
 ```
 job-scout/
-├── app.py                 # точка входа Streamlit
-├── ui/                    # страницы и компоненты
+├── app.py                 # Streamlit entry point
+├── ui/                    # pages and components
 ├── config/
-│   ├── criteria.yaml      # правила скоринга (настройте под себя)
-│   ├── schedule.yaml      # расписание автообновления
-│   └── sources.yaml       # парсеры и браузер
+│   ├── criteria.yaml      # scoring rules (customize for yourself)
+│   ├── schedule.yaml      # auto-update schedule
+│   └── sources.yaml       # parsers and browser
 ├── scripts/               # CLI: scan, enrich, match, daily_update
 ├── src/
 │   ├── adapters/          # hh, habr, geekjob
 │   ├── ai/                # router, providers, prompts, cache
 │   ├── db/                # SQLAlchemy models
 │   └── services/          # profile, scan, match, dashboard
-└── data/                  # локальная БД и логи (не в git)
+└── data/                  # local DB and logs (not in git)
 ```
 
 ---
@@ -147,42 +149,42 @@ job-scout/
 ## CLI
 
 ```bash
-python scripts/setup.py              # резюме → профиль + настройки поиска
-python scripts/scan.py                 # сбор вакансий
-python scripts/enrich.py --limit 20    # обогащение через браузер
+python scripts/setup.py              # resume → profile + search settings
+python scripts/scan.py                 # collect vacancies
+python scripts/enrich.py --limit 20    # browser enrichment
 python scripts/match.py --limit 30     # AI fast match
-python scripts/daily_update.py         # полный пайплайн по расписанию
+python scripts/daily_update.py         # full scheduled pipeline
 ```
 
 ---
 
-## macOS: запуск двойным кликом
+## macOS: double-click launch
 
-| Файл | Действие |
-|------|----------|
-| **`Запустить Job Scout.command`** | Запуск Streamlit UI |
-| **`Обновить вакансии (CLI).command`** | `scan.py` + `match.py` из терминала |
+| File | Action |
+|------|--------|
+| **`Запустить Job Scout.command`** | Launch Streamlit UI |
+| **`Обновить вакансии (CLI).command`** | `scan.py` + `match.py` from terminal |
 
-При первом запуске macOS может попросить: **ПКМ → Открыть**.
-
----
-
-## Дисклеймер
-
-Pet-project для личного поиска работы и экспериментов с AI. Соблюдайте правила площадок (hh.ru, Habr Career, Geekjob); не используйте для агрессивного или коммерческого скрейпинга.
+On first launch, macOS may prompt: **Right-click → Open**.
 
 ---
 
-## Автор
+## Disclaimer
 
-- GitHub: [@addito-5G](https://github.com/addito-5G) — профиль с другими pet-проектами
-- Telegram: [@addito](https://t.me/addito) — пишите, если пригодилось или хотите обсудить
+Pet project for personal job search and AI experiments. Respect platform rules (hh.ru, Habr Career, Geekjob); do not use for aggressive or commercial scraping.
+
+---
+
+## Author
+
+- GitHub: [@addito-5G](https://github.com/addito-5G) — profile with other pet projects
+- Telegram: [@addito](https://t.me/addito) — reach out if it helped or you want to discuss
 - Email: [addito1@yandex.ru](mailto:addito1@yandex.ru)
 
-Если проект оказался полезен — звёздочка на GitHub или ссылка другу будут приятным сигналом. Спасибо, что заглянули.
+If the project was useful — a GitHub star or a link to a friend is a nice signal. Thanks for stopping by.
 
 ---
 
-## Лицензия
+## License
 
 [MIT](LICENSE)
