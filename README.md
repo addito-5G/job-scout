@@ -8,7 +8,7 @@
 [![Streamlit](https://img.shields.io/badge/UI-Streamlit-FF4B4B.svg)](https://streamlit.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-> Personal job-search assistant (Product Manager focus). GitHub repo: [`job-scout`](https://github.com/addito-5G/job-scout). UI brand: **NextMove**. Not SaaS, not mass auto-apply — analysis, prioritization, and application materials with you in the loop.
+> Personal job-search assistant for **any role**. Upload your resume (`.md`) — AI builds a candidate profile, generates search keywords for hh.ru / Habr / Geekjob, and ranks vacancies against **your** background. GitHub repo: [`job-scout`](https://github.com/addito-5G/job-scout). UI brand: **NextMove**. Not SaaS, not mass auto-apply — analysis, prioritization, and application materials with you in the loop.
 
 **Core question:** *what should I do today to maximize my chances of getting an offer?*
 
@@ -36,7 +36,7 @@
 |------|---------------------|
 | Three platforms, three tabs | Auto-scan **hh.ru**, **Habr Career**, **Geekjob** |
 | Hundreds of jobs — where to focus | AI Match % + matched / missing skills |
-| Role switch (analyst → PM) | Profile filter without wiping the DB |
+| Role switch (analyst → designer → PM) | Profile filter without wiping the DB |
 | Applying takes time | Cover letter draft per vacancy |
 | No sense of progress | Application funnel + daily briefing |
 
@@ -59,28 +59,50 @@ Pipeline: **scan → enrich → fast/deep match → cover letter**. Optional dai
 
 ## How it works
 
+**Any resume → your search strategy → your matches.** No hardcoded role: developer, designer, analyst, PM — the pipeline adapts to what AI extracts from your CV.
+
+1. Upload resume `.md` → `parse_resume` builds profile (skills, roles, salary range)
+2. AI suggests search settings (`suggest_filters`) — job titles, keywords, regions
+3. Scan pulls vacancies from configured sources using **your** queries
+4. Match scores each vacancy against **your** profile (fast + deep analysis)
+5. Cover letter draft is generated per vacancy
+
 ```mermaid
 flowchart LR
-    R[Resume .md] --> P[Candidate profile]
-    P --> S[Search settings]
-    HH[hh.ru] --> SC[Scan service]
-    HB[Habr] --> SC
-    GJ[Geekjob] --> SC
-    SC --> DB[(SQLite + Alembic)]
-    DB --> M[AI Match]
-    M --> UI[Streamlit UI]
+    R[Any resume .md] --> P[AI profile]
+    P --> K[Search keywords]
+    K --> SC[Scan hh / Habr / Geekjob]
+    SC --> DB[(SQLite)]
+    DB --> M[Match vs your profile]
+    M --> UI[NextMove UI]
     M --> CL[Cover letter]
 ```
 
-### AI Router
+### AI: free by design
 
-| Task | Primary | Fallback |
-|------|---------|----------|
-| `parse_resume`, `fast_match` | **Ollama** | Yandex → Groq |
-| `cover_letter`, `suggest_filters` | **YandexGPT** | Groq → Ollama |
-| `match_vacancy_deep`, `improve_resume` | **Groq** | Yandex → Ollama |
+NextMove is built to run **at zero API cost** for everyday use:
 
-Responses are cached in SQLite (`ai_cache`) with usage tracking.
+| Provider | Cost | Daily limits (default) | Used for |
+|----------|------|------------------------|----------|
+| **Ollama** (local) | Free, unlimited | None | Resume parsing, fast match, search keywords |
+| **YandexGPT** | Free tier | 50 000 tokens/day | Cover letters, RU analysis |
+| **Groq** | Free tier | 14 000 requests/day | Deep vacancy match |
+
+**Local model (Ollama):** `qwen2.5:14b` by default (`OLLAMA_MODEL` in `.env`). Install [Ollama](https://ollama.com), then:
+
+```bash
+ollama pull qwen2.5:14b
+```
+
+**Automatic fallback:** the AI Router tracks daily usage. When a cloud provider hits its free limit, the task switches to the next provider in the chain. If all cloud limits are exhausted, it falls back to **local Ollama**. Responses are cached in SQLite (`ai_cache`) to save tokens.
+
+| Task | Primary | Fallback chain |
+|------|---------|----------------|
+| `parse_resume`, `fast_match`, `suggest_filters` | **Ollama** | Yandex → Groq |
+| `generate_cover_letter` | **YandexGPT** | Groq → **Ollama** |
+| `match_vacancy_deep`, `improve_resume` | **Groq** | Yandex → **Ollama** |
+
+For fully offline / unlimited usage, keep Ollama running — it has no daily caps.
 
 ---
 
@@ -107,7 +129,7 @@ Minimum for a useful run:
 
 | Variable | Purpose |
 |----------|---------|
-| `OLLAMA_MODEL` | Local parsing & fast match ([Ollama](https://ollama.com)) |
+| `OLLAMA_MODEL` | Local model, default **`qwen2.5:14b`** |
 | `GROQ_API_KEY` | Deep vacancy analysis |
 | `YC_FOLDER_ID`, `YC_KEY_PATH` | YandexGPT cover letters |
 | `CONTACT_PHONE`, `CONTACT_TELEGRAM`, `CONTACT_LINKEDIN` | Signature in letters |
@@ -154,7 +176,7 @@ job-scout/                    # repo name (UI brand: NextMove)
 ├── config/                   # criteria.yaml, sources.yaml, schedule
 ├── ui/                       # Streamlit pages & design system
 ├── scripts/                  # CLI tools
-├── tests/                    # pytest suite (49 tests)
+├── tests/                    # pytest suite
 └── src/
     ├── config.py             # .env loader
     ├── config_loader.py      # YAML config

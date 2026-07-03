@@ -41,6 +41,9 @@ class AIRouter:
         for fb in FALLBACK_CHAIN.get(primary, []):
             if fb not in chain:
                 chain.append(fb)
+        # Локальная Ollama — финальный fallback, если облачные лимиты исчерпаны.
+        if primary != "ollama" and "ollama" not in chain:
+            chain.append("ollama")
         return chain
 
     def _build_prompt(self, task_type: str, payload: dict[str, Any]) -> tuple[str, str | None]:

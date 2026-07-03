@@ -10,22 +10,42 @@ from db.models import CandidateProfile, SearchSettings
 from services.profile_serialization import loads_json as _loads, to_search_dict as _profile_to_dict
 
 
+def _keywords_from_profile(profile: CandidateProfile) -> list[str]:
+    """Ключи поиска из title и recommended_roles (без привязки к роли)."""
+    roles = _loads(profile.recommended_roles_json, [])
+    candidates: list[str] = []
+    if profile.title:
+        candidates.append(profile.title.strip())
+    candidates.extend(str(r).strip() for r in roles if r and str(r).strip())
+
+    keywords: list[str] = []
+    seen: set[str] = set()
+    for item in candidates:
+        key = item.lower()
+        if key not in seen:
+            seen.add(key)
+            keywords.append(item)
+    return keywords[:5]
+
+
 def _defaults_from_profile(profile: CandidateProfile) -> dict:
     roles = _loads(profile.recommended_roles_json, [])
     if not roles and profile.title:
         roles = [profile.title]
 
+    title_keywords = _keywords_from_profile(profile)
+
     return {
-        "desired_titles": roles[:3],
+        "desired_titles": roles[:3] or ([profile.title] if profile.title else []),
         "salary_min": profile.salary_min,
         "salary_max": profile.salary_max,
         "salary_currency": profile.salary_currency or "RUR",
         "regions": ["Москва"],
         "work_formats": ["remote", "hybrid"],
         "employment_types": ["full"],
-        "keywords_include": ["product manager", "продакт"],
+        "keywords_include": title_keywords,
         "keywords_exclude": ["junior", "intern", "стажёр"],
-        "required_skills": [],
+        "required_skills": _loads(profile.skills_json, [])[:8],
         "experience_filter": "3+",
     }
 
@@ -146,7 +166,11 @@ def get_active_search_settings(session: Session, profile_id: int) -> SearchSetti
 
 
 def settings_to_queries_from_data(data: dict) -> list[dict]:
-    titles = data.get("desired_titles") or ["product manager"]
+    titles = [t for t in (data.get("desired_titles") or []) if t and str(t).strip()]
+    if not titles:
+        titles = [k for k in (data.get("keywords_include") or []) if k and str(k).strip()][:1]
+    if not titles:
+        return []
     queries = []
     for title in titles[:3]:
         q = {"text": title, "area": 1, "search_field": "name"}
@@ -167,7 +191,7 @@ def settings_to_habr_queries_from_data(data: dict) -> list[str]:
         if key and key not in seen:
             seen.add(key)
             queries.append(item.strip())
-    return queries or ["product manager", "продакт"]
+    return queries
 
 
 def settings_to_queries(settings: SearchSettings) -> list[dict]:
