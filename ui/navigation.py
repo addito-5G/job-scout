@@ -6,7 +6,7 @@ import streamlit as st
 
 from ui.data import cached_last_scan, cached_schedule_summary
 from ui.design_system import render_sidebar_brand
-from ui.profile_filter import render_profile_filter_sidebar
+from ui.profile_filter import render_profile_filter_sidebar, render_resume_upload_sidebar
 from ui.workflow import go_to_setup, start_manual_refresh, start_resume_upload
 
 SOURCE_META: dict[str, tuple[str, str]] = {
