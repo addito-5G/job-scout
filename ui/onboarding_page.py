@@ -31,8 +31,15 @@ def _resolve_resume_content() -> tuple[str | None, str]:
 def render_onboarding() -> None:
     st.markdown("## Job Scout")
     st.markdown(
-        "Загрузите резюме **или вставьте текстом** — система извлечёт ключи для поиска вакансий. "
-        "Парсинг площадок запустится только после вашего подтверждения."
+        "Загрузите резюме **или вставьте текстом** — система создаст изолированный профиль "
+        "с отдельной базой вакансий. Парсинг площадок запустится только после вашего подтверждения."
+    )
+
+    st.text_input(
+        "Название профиля резюме",
+        placeholder="Например: Менеджер по продажам, PM B2B, Backend Python",
+        key="profile_display_name",
+        help="По этому имени вы будете переключаться между несколькими резюме.",
     )
 
     mode = st.radio(
@@ -69,11 +76,16 @@ def render_onboarding() -> None:
 
     if st.button("🔑 Извлечь ключи для поиска", type="primary", use_container_width=True):
         content, filename = _resolve_resume_content()
+        display_name = (st.session_state.get("profile_display_name") or "").strip()
         if not content:
             st.error("Сначала вставьте текст резюме или загрузите файл.")
             return
+        if not display_name:
+            st.error("Укажите название профиля резюме.")
+            return
         st.session_state.pending_resume_content = content
         st.session_state.pending_resume_filename = filename
+        st.session_state.pending_profile_display_name = display_name
         st.session_state.extract_running = True
         go_to("extracting")
         st.rerun()

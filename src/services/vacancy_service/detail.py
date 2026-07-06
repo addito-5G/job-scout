@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from db.models import VacancyMatch
 from db.repositories.vacancy_repo import get_vacancy_by_id, get_vacancy_skills, get_vacancy_tags
-from services.vacancy_service.match_view import cover_letter_from_rows, match_to_dict
+from services.vacancy_service.match_view import LEGACY_LEVELS, cover_letter_from_rows, match_to_dict, pick_best_match
 from services.vacancy_service.types import VacancyDetail
 
 
@@ -20,22 +20,24 @@ def get_vacancy_detail(
     if not v:
         return None
 
-    fast = deep = None
+    match_rows: list[VacancyMatch] = []
     if profile_id:
-        fast = session.execute(
-            select(VacancyMatch).where(
-                VacancyMatch.vacancy_id == vacancy_id,
-                VacancyMatch.profile_id == profile_id,
-                VacancyMatch.match_level == "fast",
-            )
-        ).scalar_one_or_none()
-        deep = session.execute(
-            select(VacancyMatch).where(
-                VacancyMatch.vacancy_id == vacancy_id,
-                VacancyMatch.profile_id == profile_id,
-                VacancyMatch.match_level == "deep",
-            )
-        ).scalar_one_or_none()
+        match_rows = list(
+            session.execute(
+                select(VacancyMatch).where(
+                    VacancyMatch.vacancy_id == vacancy_id,
+                    VacancyMatch.profile_id == profile_id,
+                    VacancyMatch.match_level.in_(LEGACY_LEVELS),
+                )
+            ).scalars()
+        )
+
+    by_level = {row.match_level: row for row in match_rows}
+    fit_dict = pick_best_match(
+        match_to_dict(by_level.get("fit")),
+        match_to_dict(by_level.get("deep")),
+        match_to_dict(by_level.get("fast")),
+    )
 
     skills = get_vacancy_skills(session, vacancy_id)
     tags = get_vacancy_tags(session, vacancy_id)
@@ -45,7 +47,7 @@ def get_vacancy_detail(
         id=v.id,
         title=v.title,
         company=company.name if company else None,
-        company_description=company.description if company else None,
+        company_description=(company.ai_brief or company.description) if company else None,
         company_website=company.website if company else None,
         url=v.external_url,
         description=v.description_short,
@@ -61,10 +63,8 @@ def get_vacancy_detail(
         employment=v.employment,
         experience=v.experience_required,
         status=v.user_status or "new",
-        score=v.rule_score or 0,
-        cover_letter=cover_letter_from_rows(fast, deep),
+        cover_letter=cover_letter_from_rows(*match_rows),
         source=v.source,
         published_at=v.published_at,
-        fast_match=match_to_dict(fast),
-        deep_match=match_to_dict(deep),
+        fit_match=fit_dict,
     )

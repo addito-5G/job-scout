@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from db.models import Base, Vacancy
+from db.models import Base, CandidateProfile, SearchSettings, Vacancy
 from db.repositories.vacancy_repo import count_new_vacancies, upsert_vacancy
 from models import Vacancy as VacancyDTO
 from services.profile_filter_service import ROLE_PRODUCT_MANAGER
@@ -28,8 +28,18 @@ def db_session() -> Session:
         session.close()
 
 
-def test_count_new_vacancies_by_scraped_at(db_session: Session):
+@pytest.fixture
+def profile(db_session: Session) -> CandidateProfile:
+    profile = CandidateProfile(display_name="Тест", resume_raw="x", full_name="Test")
+    db_session.add(profile)
+    db_session.commit()
+    db_session.refresh(profile)
+    return profile
+
+
+def test_count_new_vacancies_by_scraped_at(db_session: Session, profile: CandidateProfile):
     recent = Vacancy(
+        profile_id=profile.id,
         source="hh",
         external_id="r1",
         title="PM",
@@ -38,6 +48,7 @@ def test_count_new_vacancies_by_scraped_at(db_session: Session):
         is_active=True,
     )
     old = Vacancy(
+        profile_id=profile.id,
         source="hh",
         external_id="o1",
         title="Old",
@@ -48,37 +59,62 @@ def test_count_new_vacancies_by_scraped_at(db_session: Session):
     db_session.add_all([recent, old])
     db_session.commit()
 
-    assert count_new_vacancies(db_session, 7) == 1
-    assert count_new_vacancies(db_session, 90) == 2
+    assert count_new_vacancies(db_session, 7, profile_id=profile.id) == 1
+    assert count_new_vacancies(db_session, 90, profile_id=profile.id) == 2
 
 
-def test_upsert_vacancy_accepts_profile_role(db_session: Session):
+def test_upsert_vacancy_creates_new(db_session: Session, profile: CandidateProfile):
     dto = VacancyDTO(
         source="hh",
         external_id="x1",
         title="Product Manager",
         company="Acme",
-        url="https://hh.ru/x1",
-        score=50,
-    )
-    vid, is_new = upsert_vacancy(
+            url="https://hh.ru/x1",
+        )
+    vid, outcome = upsert_vacancy(
         db_session,
         dto,
+        profile_id=profile.id,
         search_settings_id=None,
         profile_role=ROLE_PRODUCT_MANAGER,
     )
-    assert is_new is True
+    assert outcome == "new"
     row = db_session.get(Vacancy, vid)
     assert row is not None
+    assert row.profile_id == profile.id
     assert row.profile_role == ROLE_PRODUCT_MANAGER
 
 
-def test_upsert_scored_vacancy_sets_role_from_settings(db_session: Session):
-    from db.models import CandidateProfile, SearchSettings
+def test_upsert_vacancy_skips_existing(db_session: Session, profile: CandidateProfile):
+    dto = VacancyDTO(
+        source="hh",
+        external_id="dup",
+        title="Sales Manager",
+        company="Acme",
+            url="https://hh.ru/dup",
+            salary="100 000",
+        salary_min=100000,
+    )
+    vid1, outcome1 = upsert_vacancy(db_session, dto, profile_id=profile.id)
+    assert outcome1 == "new"
 
-    profile = CandidateProfile(resume_raw="x", full_name="Test")
-    db_session.add(profile)
-    db_session.flush()
+    dto2 = VacancyDTO(
+        source="hh",
+        external_id="dup",
+        title="Changed title",
+        company="Other",
+        url="https://hh.ru/dup",
+        salary="120 000",
+        salary_min=120000,
+    )
+    vid2, outcome2 = upsert_vacancy(db_session, dto2, profile_id=profile.id)
+    assert vid2 == vid1
+    assert outcome2 == "meta_updated"
+    row = db_session.get(Vacancy, vid1)
+    assert row.title == "Sales Manager"
+
+
+def test_upsert_scored_vacancy_sets_role_from_settings(db_session: Session, profile: CandidateProfile):
     settings = SearchSettings(
         profile_id=profile.id,
         desired_titles_json='["Product Manager"]',
@@ -92,9 +128,11 @@ def test_upsert_scored_vacancy_sets_role_from_settings(db_session: Session):
         external_id="h1",
         title="PM role",
         url="https://habr.com/h1",
-        score=40,
     )
-    vid, _ = upsert_scored_vacancy(db_session, dto, search_settings_id=settings.id)
+    vid, outcome = upsert_scored_vacancy(
+        db_session, dto, profile_id=profile.id, search_settings_id=settings.id
+    )
+    assert outcome == "new"
     row = db_session.get(Vacancy, vid)
     assert row is not None
     assert row.profile_role == ROLE_PRODUCT_MANAGER

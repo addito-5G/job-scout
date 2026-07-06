@@ -5,12 +5,12 @@ from __future__ import annotations
 import streamlit as st
 
 from db import get_session, init_db
-from services.profile_service import get_latest_profile
+from services.profile_service import get_active_profile
 from services.today_service import build_today_briefing
 from ui.components import match_score_class
 from ui.data import cached_profile_id
 from ui.design_system import COLORS
-from ui.profile_filter import get_selected_profile_role
+from ui.profile_filter import get_active_resume_profile_label
 
 
 def _go(view: str, **kwargs) -> None:
@@ -24,16 +24,14 @@ def _go(view: str, **kwargs) -> None:
 
 def render_today() -> None:
     profile_id = cached_profile_id()
-    profile_role = get_selected_profile_role()
 
     init_db()
     session = get_session()
     try:
-        profile = get_latest_profile(session)
+        profile = get_active_profile(session)
         briefing = build_today_briefing(
             session,
             profile_id,
-            profile_role=profile_role,
             full_name=profile.full_name if profile else None,
         )
     finally:

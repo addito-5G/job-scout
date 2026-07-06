@@ -35,9 +35,9 @@
 | Pain | How NextMove helps |
 |------|---------------------|
 | Three platforms, three tabs | Auto-scan **hh.ru**, **Habr Career**, **Geekjob** |
-| Hundreds of jobs — where to focus | AI Match % + matched / missing skills |
+| Hundreds of jobs — where to focus | **Fit Score %** — deterministic match + gaps to improve |
 | Role switch (analyst → designer → PM) | Profile filter without wiping the DB |
-| Applying takes time | Cover letter draft per vacancy |
+| Applying takes time | Cover letter draft + LinkedIn soft outreach per vacancy |
 | No sense of progress | Application funnel + daily briefing |
 
 ---
@@ -47,13 +47,13 @@
 | Section | Purpose |
 |---------|---------|
 | **Today** | Daily briefing: top action, insights, metrics |
-| **Opportunities** | Prioritized list with match score and quick actions |
+| **Opportunities** | Companies → vacancies, fit score, quick actions |
 | **Saved / Applications** | Job search CRM funnel |
 | **Resume** | AI Resume Coach — what to strengthen for the market |
 | **Market** | Market Insights — demand, salary, skills |
 | **Career Agent** | Search preferences (role, keywords, salary) |
 
-Pipeline: **scan → enrich → fast/deep match → cover letter**. Optional daily run at 09:00 via macOS launchd.
+Pipeline: **scan → enrich → fit score → cover letter** (+ optional LinkedIn guest parse). Optional daily run at 09:00 via macOS launchd.
 
 ---
 
@@ -63,9 +63,9 @@ Pipeline: **scan → enrich → fast/deep match → cover letter**. Optional dai
 
 1. Upload resume `.md` → `parse_resume` builds profile (skills, roles, salary range)
 2. AI suggests search settings (`suggest_filters`) — job titles, keywords, regions
-3. Scan pulls vacancies from configured sources using **your** queries
-4. Match scores each vacancy against **your** profile (fast + deep analysis)
-5. Cover letter draft is generated per vacancy
+3. Scan pulls vacancies from **hh.ru**, **Habr**, **Geekjob**, optional **LinkedIn** (guest API)
+4. **Fit Score** (`domain/fit_score.py`) ranks each vacancy vs your profile — skills, role, experience, gaps
+5. Cover letter + optional LinkedIn outreach message — AI drafts, you send manually
 
 ```mermaid
 flowchart LR
@@ -74,10 +74,11 @@ flowchart LR
     HH[hh.ru] --> SC[Scan service]
     HB[Habr] --> SC
     GJ[Geekjob] --> SC
+    LI[LinkedIn guest] --> SC
     SC --> DB[(SQLite + Alembic)]
-    DB --> M[AI Match]
-    M --> UI[NextMove UI]
-    M --> CL[Cover letter]
+    DB --> F[Fit Score]
+    F --> UI[NextMove UI]
+    F --> CL[Cover letter]
 ```
 
 ### AI: free by design
@@ -86,9 +87,9 @@ NextMove is built to run **at zero API cost** for everyday use:
 
 | Provider | Cost | Daily limits (default) | Used for |
 |----------|------|------------------------|----------|
-| **Ollama** (local) | Free, unlimited | None | Resume parsing, fast match, search keywords |
-| **YandexGPT** | Free tier | 50 000 tokens/day | Cover letters, RU analysis |
-| **Groq** | Free tier | 14 000 requests/day | Deep vacancy match |
+| **Ollama** (local) | Free, unlimited | None | Resume parsing, search keywords |
+| **YandexGPT** | Free tier | 50 000 tokens/day | Cover letters, outreach, resume coach |
+| **Groq** | Free tier | 14 000 requests/day | Resume improvements (optional) |
 
 **Local model (Ollama):** `qwen2.5:14b` by default (`OLLAMA_MODEL` in `.env`). Install [Ollama](https://ollama.com), then:
 
@@ -100,9 +101,10 @@ ollama pull qwen2.5:14b
 
 | Task | Primary | Fallback chain |
 |------|---------|----------------|
-| `parse_resume`, `fast_match`, `suggest_filters` | **Ollama** | Yandex → Groq |
-| `generate_cover_letter` | **YandexGPT** | Groq → **Ollama** |
-| `match_vacancy_deep`, `improve_resume` | **Groq** | Yandex → **Ollama** |
+| `parse_resume`, `suggest_filters` | **Ollama** | Yandex → Groq |
+| `generate_cover_letter`, `generate_linkedin_outreach`, `improve_resume` | **YandexGPT** | Groq → **Ollama** |
+
+**Fit Score** is computed locally (no LLM) — consistent %, matched/missing skills, and “what to strengthen”.
 
 For fully offline / unlimited usage, keep Ollama running — it has no daily caps.
 
@@ -132,7 +134,7 @@ Minimum for a useful run:
 | Variable | Purpose |
 |----------|---------|
 | `OLLAMA_MODEL` | Local model, default **`qwen2.5:14b`** |
-| `GROQ_API_KEY` | Deep vacancy analysis |
+| `GROQ_API_KEY` | Optional — resume improvements fallback |
 | `YC_FOLDER_ID`, `YC_KEY_PATH` | YandexGPT cover letters |
 | `CONTACT_PHONE`, `CONTACT_TELEGRAM`, `CONTACT_LINKEDIN` | Signature in letters |
 | `DATABASE_URL` | SQLite path (default `sqlite:///./data/vacancies.db`) |
@@ -156,7 +158,7 @@ Open **http://localhost:8502** → upload resume → **Scan market** in the side
 ```bash
 python scripts/setup.py      # profile + AI search settings
 python scripts/scan.py       # fetch vacancies
-python scripts/match.py --limit 50
+python scripts/match.py --limit 50   # compute fit scores
 ```
 
 ### Optional: browser enrich & schedule
@@ -183,7 +185,7 @@ job-scout/                    # repo name (UI brand: NextMove)
     ├── config.py             # .env loader
     ├── config_loader.py      # YAML config
     ├── cli_logging.py        # shared CLI logging
-    ├── domain/               # domain types (e.g. role)
+    ├── domain/               # fit_score, role types
     ├── ai/                   # router, cache, prompts
     ├── db/
     │   ├── tables.py         # SQLAlchemy ORM (source of truth)
@@ -209,7 +211,7 @@ Install in editable mode (`pip install -e ".[dev]"`) so `scripts/` and `ui/` imp
 | `python scripts/init_db.py` | Create / migrate SQLite schema |
 | `python scripts/setup.py` | Full onboarding: profile + search settings |
 | `python scripts/scan.py` | Scan configured sources |
-| `python scripts/match.py --limit 50` | Run AI matching |
+| `python scripts/match.py --limit 50` | Compute fit scores for vacancies |
 | `python scripts/enrich.py` | Enrich vacancy descriptions |
 | `python scripts/review.py list` | Review queue in terminal |
 | `python scripts/daily_update.py` | Scheduled pipeline (scan + match + metrics) |

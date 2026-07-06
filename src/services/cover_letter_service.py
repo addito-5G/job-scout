@@ -12,7 +12,6 @@ from db.models import CandidateProfile, Vacancy
 from db.repositories.match_repo import get_match, save_cover_letter_draft
 from domain.role import infer_target_role
 from services.cover_letter_context import (
-    first_name_from,
     match_context_for_cover_letter,
     profile_for_cover_letter_json,
 )
@@ -25,7 +24,7 @@ _CONTACTS_LINE_RE = re.compile(r"^\s*мои контакты\s*:", re.IGNORECASE
 
 
 def _get_match_for_letter(session: Session, vacancy_id: int, profile_id: int):
-    for level in ("deep", "fast"):
+    for level in ("fit", "deep", "fast"):
         match = get_match(session, vacancy_id, profile_id, level)
         if match:
             return match
@@ -57,28 +56,7 @@ def _strip_ai_contacts(letter: str) -> str:
 
 
 def _normalize_letter(letter: str, profile: CandidateProfile) -> str:
-    full_name = (profile.full_name or "").strip()
-    first = first_name_from(full_name)
-
-    if first != "кандидат":
-        if full_name:
-            letter = letter.replace(full_name, first)
-        if " " in full_name:
-            surname = full_name.split()[-1]
-            letter = re.sub(
-                rf"\b{re.escape(first)}\s+{re.escape(surname)}\b",
-                first,
-                letter,
-                flags=re.IGNORECASE,
-            )
-        letter = re.sub(
-            r"(Меня зовут\s+)([^,.\n]+)",
-            rf"\1{first}",
-            letter,
-            count=1,
-            flags=re.IGNORECASE,
-        )
-
+    """Лёгкая постобработка: клише и форматирование. Имя — на стороне AI из резюме."""
     letter = re.sub(
         r"у меня более\s+\d+\s+лет опыта[^,]+,\s*",
         "",
@@ -98,15 +76,11 @@ def _normalize_letter(letter: str, profile: CandidateProfile) -> str:
             letter,
             flags=re.IGNORECASE,
         )
-        letter = re.sub(
-            rf"более\s+{profile.experience_years}\s+лет[^.!\n]*[.!]\s*",
-            "",
-            letter,
-            flags=re.IGNORECASE,
-        )
 
     banned = [
         r"уверен, что мои навыки[^.!\n]*[.!]\s*",
+        r"я приобрёл глубокие знания[^.!\n]*[.!]\s*",
+        r"владею различными инструментами[^.!\n]*[.!]\s*",
         r"меня заинтересовала возможность поработать[^.!\n]*[.!]\s*",
         r"меня заинтересовала возможность[^.!\n]*[.!]\s*",
         r"спасибо за ваше время[^.!\n]*[.!]?\s*",

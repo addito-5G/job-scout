@@ -65,12 +65,10 @@ def main() -> None:
     if not args.skip_enrich:
         logger.info("\n=== Enrich ===")
         limit = int(browser.get("enrich_limit", 30))
-        min_score = int(criteria.get("thresholds", {}).get("min_score", 0))
         try:
             enriched, enrich_errors = enrich_vacancies(
                 criteria=criteria,
                 limit=limit,
-                min_score=min_score,
                 delay_seconds=float(browser.get("delay_seconds", 2)),
             )
             errors.extend(enrich_errors)

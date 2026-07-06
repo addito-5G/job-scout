@@ -8,7 +8,7 @@ from typing import Any, Optional
 
 @dataclass
 class Vacancy:
-    """DTO для парсеров и rule-based скоринга."""
+    """DTO для парсеров вакансий."""
 
     source: str
     external_id: str
@@ -19,8 +19,6 @@ class Vacancy:
     salary: str = ""
     location: str = ""
     published_at: Optional[datetime] = None
-    score: int = 0
-    score_reasons: list[str] = field(default_factory=list)
     user_status: str = "new"
     cover_letter: str = ""
     id: Optional[int] = None
@@ -60,21 +58,6 @@ class Vacancy:
     @status.setter
     def status(self, value: str) -> None:
         self.user_status = value
-
-    def scoring_text(self) -> str:
-        parts = [
-            self.title,
-            self.company,
-            self.description_short or self.description,
-            self.description_full,
-            self.location,
-            self.salary,
-            self.employment,
-            self.work_schedule,
-            self.experience,
-            " ".join(self.skills),
-        ]
-        return " ".join(p for p in parts if p)
 
     def skills_json(self) -> str:
         return json.dumps(self.skills, ensure_ascii=False)

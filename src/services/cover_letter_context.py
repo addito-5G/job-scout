@@ -122,21 +122,65 @@ def profile_for_cover_letter_json(profile: CandidateProfile, *, target_role: str
     pm_achievements = [s for s in strengths if _strength_for_pm_letter(s)]
 
     domains = _loads(profile.domains_json, [])
+    resume_header = (profile.resume_raw or "").strip()[:700]
 
     data = {
-        "first_name": first_name_from(profile.full_name),
+        "full_name": (profile.full_name or "").strip() or None,
+        "resume_header_excerpt": resume_header or None,
+        "name_instruction": (
+            "Определи имя (не фамилию) для «Меня зовут …» из full_name и resume_header_excerpt. "
+            "Если full_name в формате «Фамилия Имя» — используй имя."
+        ),
         "role_title": role_title_for_letter(profile, target_role),
         "domains": domains,
-        "pm_skills": pm_skills,
-        "pm_achievements": pm_achievements,
-        "analyst_tools_supplement": analyst_tools,
+        "pm_skills": pm_skills[:12],
+        "pm_achievements": pm_achievements[:6],
+        "analyst_tools_supplement": analyst_tools[:6],
         "experience_years": profile.experience_years,
     }
+    summary = (profile.ai_summary or "").strip()
+    if summary:
+        data["ai_summary"] = summary[:500]
+    exp = (profile.experience_summary or "").strip()
+    if exp:
+        data["experience_summary"] = exp[:400]
     if target_role == "product_manager":
         data["note"] = (
-            "Для письма используй pm_achievements и pm_skills как основу. "
-            "analyst_tools_supplement — только в блоке доп. навыков, 1 предложение."
+            "Письмо строй на pm_achievements и задачах вакансии, не на полном списке pm_skills. "
+            "analyst_tools_supplement — максимум одно предложение, если уместно."
         )
+    return json.dumps({k: v for k, v in data.items() if v is not None}, ensure_ascii=False)
+
+
+def profile_for_outreach_json(profile: CandidateProfile, *, target_role: str) -> str:
+    """Контекст профиля для LinkedIn outreach — факты + углы позиционирования."""
+    skills = _loads(profile.skills_json, [])
+    strengths = _loads(profile.strengths_json, [])
+    domains = _loads(profile.domains_json, [])
+    recommended = _loads(profile.recommended_roles_json, [])
+
+    data: dict = {
+        "first_name": first_name_from(profile.full_name),
+        "role_title": role_title_for_letter(profile, target_role),
+        "domains": domains[:5],
+        "top_skills": skills[:8],
+        "highlights": strengths[:4],
+        "recommended_roles": recommended[:3],
+        "experience_years": profile.experience_years,
+        "builder_angles": [
+            "созидатель, builder mindset",
+            "интерес к сложным системам и новым продуктам",
+            "data-driven подход",
+            "изучает AI-агентов и automation",
+            "вера, что AI усиливает людей и команды",
+        ],
+    }
+    summary = (profile.ai_summary or "").strip()
+    if summary:
+        data["ai_summary"] = summary[:500]
+    exp = (profile.experience_summary or "").strip()
+    if exp:
+        data["experience_summary"] = exp[:400]
     return json.dumps(data, ensure_ascii=False)
 
 

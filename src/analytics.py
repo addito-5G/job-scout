@@ -9,7 +9,7 @@ from statistics import median
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, joinedload
 
-from db.models import Company, Skill, Vacancy, VacancySkill
+from db.models import Company, Skill, Vacancy, VacancyMatch, VacancySkill
 from db.repositories.metrics_repo import get_daily_metrics, vacancy_stats
 from time_utils import utc_now
 
@@ -22,12 +22,23 @@ STACK_KEYWORDS = [
 
 def build_analytics(session: Session, criteria: dict | None = None) -> dict:
     criteria = criteria or {}
-    min_score = criteria.get("thresholds", {}).get("min_score", 40)
+    min_score = 50
     rows = list(
         session.execute(
             select(Vacancy).options(joinedload(Vacancy.company_rel))
         ).unique().scalars()
     )
+    match_scores = {
+        row.vacancy_id: float(row.best_score)
+        for row in session.execute(
+            select(
+                VacancyMatch.vacancy_id,
+                func.max(VacancyMatch.match_score).label("best_score"),
+            )
+            .where(VacancyMatch.match_level.in_(("fit", "deep", "fast")))
+            .group_by(VacancyMatch.vacancy_id)
+        ).all()
+    }
     stats = vacancy_stats(session)
 
     skills_counter: Counter = Counter()
@@ -45,7 +56,7 @@ def build_analytics(session: Session, criteria: dict | None = None) -> dict:
         skills_counter[name] = cnt
 
     for row in rows:
-        score = row.rule_score or 0
+        score = int(match_scores.get(row.id) or 0)
         if score == 0:
             score_buckets["0"] += 1
         elif score < 40:

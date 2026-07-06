@@ -13,7 +13,7 @@ from ui.data import (
     cached_work_format_chart,
 )
 from ui.design_system import COLORS
-from ui.profile_filter import get_selected_profile_role
+from ui.profile_filter import get_active_resume_profile_label
 
 
 def _insight_cards(metrics: dict, buckets: dict, skills: list) -> None:
@@ -45,8 +45,7 @@ def _insight_cards(metrics: dict, buckets: dict, skills: list) -> None:
 
 def render_market_insights() -> None:
     profile_id = cached_profile_id()
-    profile_role = get_selected_profile_role()
-    metrics = cached_dashboard_metrics(profile_id, profile_role)
+    metrics = cached_dashboard_metrics(profile_id)
 
     st.markdown(
         '<div class="nm-eyebrow">Рынок</div>'
@@ -57,8 +56,8 @@ def render_market_insights() -> None:
 
     _insight_cards(
         metrics,
-        cached_match_buckets(profile_id, profile_role),
-        cached_top_skills(8, profile_role),
+        cached_match_buckets(profile_id),
+        cached_top_skills(8, profile_id),
     )
 
     c1, c2, c3, c4 = st.columns(4)
@@ -71,7 +70,7 @@ def render_market_insights() -> None:
     row1_l, row1_r = st.columns(2)
     with row1_l:
         st.markdown('<div class="nm-section-label">Формат работы</div>', unsafe_allow_html=True)
-        wf = cached_work_format_chart(profile_role)
+        wf = cached_work_format_chart(profile_id)
         if wf:
             fig = px.pie(
                 names=[x[0] for x in wf],
@@ -89,7 +88,7 @@ def render_market_insights() -> None:
             st.plotly_chart(fig, use_container_width=True)
     with row1_r:
         st.markdown('<div class="nm-section-label">Распределение match</div>', unsafe_allow_html=True)
-        buckets = cached_match_buckets(profile_id, profile_role)
+        buckets = cached_match_buckets(profile_id)
         if buckets and sum(buckets.values()) > 0:
             fig = px.bar(
                 x=list(buckets.keys()),

@@ -151,6 +151,12 @@ def vacancy_scope_condition(profile_role: str | None) -> ColumnElement[bool] | N
     return Vacancy.profile_role == profile_role
 
 
+def vacancy_profile_scope(profile_id: int | None) -> ColumnElement[bool] | None:
+    if profile_id is None:
+        return None
+    return Vacancy.profile_id == profile_id
+
+
 def _role_from_settings_row(settings_by_id: dict[int, SearchSettings], settings_id: int | None) -> str | None:
     if settings_id is None:
         return None

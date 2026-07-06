@@ -18,9 +18,9 @@ from services.dashboard_service import (
     vacancy_timeline,
     work_format_distribution,
 )
-from services.profile_service import get_latest_profile
+from services.profile_service import get_active_profile
 from services.schedule_service import format_dt_msk, load_schedule, next_scan_label
-from services.vacancy_service import VacancyFilters, count_vacancies_by_source, list_vacancies
+from services.vacancy_service import VacancyFilters, count_vacancies_by_source, list_companies, list_vacancies
 
 
 @st.cache_data(ttl=30, show_spinner=False)
@@ -49,15 +49,21 @@ def cached_schedule_summary() -> dict:
 
 @st.cache_data(ttl=60, show_spinner=False)
 def cached_profile_id() -> int | None:
+    """Активный профиль: session_state (сайдбар) приоритетнее БД-кэша."""
+    from ui.profile_filter import get_active_resume_profile_id
+
+    session_id = get_active_resume_profile_id()
+    if session_id is not None:
+        return int(session_id)
     with session_scope() as session:
-        profile = get_latest_profile(session)
+        profile = get_active_profile(session)
         return profile.id if profile else None
 
 
 @st.cache_data(ttl=60, show_spinner=False)
-def cached_source_counts(profile_role: str | None) -> dict[str, int]:
+def cached_source_counts(profile_id: int | None) -> dict[str, int]:
     with session_scope() as session:
-        return count_vacancies_by_source(session, profile_role=profile_role)
+        return count_vacancies_by_source(session, profile_id=profile_id)
 
 
 @st.cache_data(ttl=60, show_spinner=False)
@@ -67,21 +73,17 @@ def cached_vacancy_list(
     min_match_score: int,
     search: str,
     page: int,
-    profile_role: str | None,
 ) -> tuple[list[dict], int]:
-    return cached_opportunity_list(
-        profile_id, source or None, min_match_score, search, page, profile_role, status=None
-    )
+    return cached_opportunity_list(profile_id, source or None, min_match_score, search, page, status=None)
 
 
 @st.cache_data(ttl=60, show_spinner=False)
-def cached_opportunity_list(
+def cached_company_list(
     profile_id: int | None,
     source: str | None,
     min_match_score: int,
     search: str,
     page: int,
-    profile_role: str | None,
     status: str | None = None,
 ) -> tuple[list[dict], int]:
     with session_scope() as session:
@@ -91,9 +93,63 @@ def cached_opportunity_list(
             search=search or None,
             page=page,
             per_page=20,
-            profile_role=profile_role,
             user_status=status,
             hide_hidden=status != "hidden",
+        )
+        items, total = list_companies(session, profile_id, filters)
+        return [
+            {
+                "id": c.id,
+                "name": c.name,
+                "ai_brief": c.ai_brief,
+                "website": c.website,
+                "vacancy_count": c.vacancy_count,
+                "best_match_score": c.best_match_score,
+                "sources": c.sources,
+            }
+            for c in items
+        ], total
+
+
+@st.cache_data(ttl=60, show_spinner=False)
+def cached_company_detail(company_id: int, profile_id: int | None) -> dict | None:
+    from services.vacancy_service import get_company_detail
+
+    with session_scope() as session:
+        detail = get_company_detail(session, company_id, profile_id, ensure_brief=True)
+        if not detail:
+            return None
+        return {
+            "id": detail.id,
+            "name": detail.name,
+            "ai_brief": detail.ai_brief,
+            "website": detail.website,
+            "description": detail.description,
+            "vacancy_count": detail.vacancy_count,
+            "best_match_score": detail.best_match_score,
+        }
+
+
+@st.cache_data(ttl=60, show_spinner=False)
+def cached_opportunity_list(
+    profile_id: int | None,
+    source: str | None,
+    min_match_score: int,
+    search: str,
+    page: int,
+    status: str | None = None,
+    company_id: int | None = None,
+) -> tuple[list[dict], int]:
+    with session_scope() as session:
+        filters = VacancyFilters(
+            source=source,
+            min_match_score=min_match_score,
+            search=search or None,
+            page=page,
+            per_page=20,
+            user_status=status,
+            hide_hidden=status != "hidden",
+            company_id=company_id,
         )
         items, total = list_vacancies(session, profile_id, filters)
         return [
@@ -119,53 +175,51 @@ def cached_opportunity_list(
 
 
 @st.cache_data(ttl=120, show_spinner=False)
-def cached_dashboard_metrics(profile_id: int | None, profile_role: str | None) -> dict:
+def cached_dashboard_metrics(profile_id: int | None) -> dict:
     with session_scope() as session:
-        return get_metrics(session, profile_id, profile_role=profile_role)
+        return get_metrics(session, profile_id)
 
 
 @st.cache_data(ttl=120, show_spinner=False)
-def cached_work_format_chart(profile_role: str | None) -> list[tuple[str, int]]:
+def cached_work_format_chart(profile_id: int | None) -> list[tuple[str, int]]:
     with session_scope() as session:
-        return work_format_distribution(session, profile_role=profile_role)
+        return work_format_distribution(session, profile_id=profile_id)
 
 
 @st.cache_data(ttl=120, show_spinner=False)
-def cached_source_chart(profile_role: str | None) -> list[tuple[str, int]]:
+def cached_source_chart(profile_id: int | None) -> list[tuple[str, int]]:
     with session_scope() as session:
-        return source_distribution(session, profile_role=profile_role)
+        return source_distribution(session, profile_id=profile_id)
 
 
 @st.cache_data(ttl=120, show_spinner=False)
-def cached_top_companies(limit: int, profile_role: str | None) -> list[tuple[str, int]]:
+def cached_top_companies(limit: int, profile_id: int | None) -> list[tuple[str, int]]:
     with session_scope() as session:
-        return top_companies(session, limit=limit, profile_role=profile_role)
+        return top_companies(session, limit=limit, profile_id=profile_id)
 
 
 @st.cache_data(ttl=120, show_spinner=False)
-def cached_experience_chart(profile_role: str | None) -> list[tuple[str, int]]:
+def cached_experience_chart(profile_id: int | None) -> list[tuple[str, int]]:
     with session_scope() as session:
-        return experience_distribution(session, profile_role=profile_role)
+        return experience_distribution(session, profile_id=profile_id)
 
 
 @st.cache_data(ttl=120, show_spinner=False)
-def cached_match_buckets(profile_id: int | None, profile_role: str | None) -> dict[str, int]:
+def cached_match_buckets(profile_id: int | None) -> dict[str, int]:
     with session_scope() as session:
-        return match_score_buckets(
-            session, profile_id, profile_role=profile_role
-        )
+        return match_score_buckets(session, profile_id)
 
 
 @st.cache_data(ttl=120, show_spinner=False)
-def cached_top_skills(limit: int, profile_role: str | None) -> list[tuple[str, int]]:
+def cached_top_skills(limit: int, profile_id: int | None) -> list[tuple[str, int]]:
     with session_scope() as session:
-        return top_skills(session, limit=limit, profile_role=profile_role)
+        return top_skills(session, limit=limit, profile_id=profile_id)
 
 
 @st.cache_data(ttl=120, show_spinner=False)
-def cached_timeline(days: int, profile_role: str | None) -> list[tuple[str, int]]:
+def cached_timeline(days: int, profile_id: int | None) -> list[tuple[str, int]]:
     with session_scope() as session:
-        return vacancy_timeline(session, days=days, profile_role=profile_role)
+        return vacancy_timeline(session, days=days, profile_id=profile_id)
 
 
 def clear_data_cache() -> None:

@@ -6,7 +6,7 @@ from __future__ import annotations
 import streamlit as st
 
 from db import session_scope
-from services.profile_service import get_latest_profile
+from services.profile_service import get_active_profile
 from services.search_service import get_active_search_settings
 from ui.applications_page import render_applications
 from ui.brand import PRODUCT_NAME, PRODUCT_TAGLINE
@@ -36,7 +36,7 @@ inject_design_system()
 
 def _bootstrap() -> tuple[bool, bool]:
     with session_scope() as session:
-        profile = get_latest_profile(session)
+        profile = get_active_profile(session)
         has_resume = bool(profile and profile.resume_raw)
         has_settings = bool(
             profile and get_active_search_settings(session, profile.id)

@@ -1,4 +1,4 @@
-"""Выбор профиля поиска в сайдбаре."""
+"""Выбор профиля резюме в сайдбаре."""
 
 from __future__ import annotations
 
@@ -7,62 +7,57 @@ import streamlit as st
 
 
 from db import get_session, init_db
-from services.profile_filter_service import get_active_filter_role, list_profile_filters
-from ui.data import cached_profile_id, clear_data_cache
+from services.profile_service import get_active_profile, list_profiles, set_active_profile
+from ui.data import clear_data_cache
 from ui.workflow import start_resume_upload
 
 
-def get_selected_profile_role() -> str | None:
-    return st.session_state.get("selected_profile_role")
+def get_active_resume_profile_id() -> int | None:
+    return st.session_state.get("active_resume_profile_id")
 
 
-def get_selected_profile_label() -> str | None:
-    return st.session_state.get("selected_profile_label")
+def get_active_resume_profile_label() -> str | None:
+    return st.session_state.get("active_resume_profile_label")
 
 
-def render_profile_filter_sidebar() -> str | None:
-    profile_id = cached_profile_id()
-    if profile_id is None:
-        return None
-
+def render_profile_filter_sidebar() -> int | None:
     init_db()
     session = get_session()
     try:
-        filters = list_profile_filters(session, profile_id)
-        if not filters:
+        profiles = list_profiles(session)
+        if not profiles:
             return None
 
-        labels = [f["label"] for f in filters]
-        roles = [f["role"] for f in filters]
-        active_role = get_active_filter_role(session, profile_id)
+        labels = [p.display_name for p in profiles]
+        ids = [p.id for p in profiles]
+        active = get_active_profile(session)
+        default_id = st.session_state.get("active_resume_profile_id") or (active.id if active else ids[0])
+        if default_id not in ids:
+            default_id = ids[0]
 
-        default_role = st.session_state.get("selected_profile_role") or active_role or roles[0]
-        if default_role not in roles:
-            default_role = roles[0]
-
-        default_index = roles.index(default_role)
-        prev_role = st.session_state.get("selected_profile_role")
+        prev_id = st.session_state.get("active_resume_profile_id")
+        default_index = ids.index(default_id)
 
         choice = st.sidebar.selectbox(
-            "Целевая должность",
+            "Профиль резюме",
             options=labels,
             index=default_index,
-            help=(
-                "Фильтр вакансий по одной из целевых ролей из вашего резюме. "
-                "Это не отдельные CV — для нового файла нажмите «Загрузить новое резюме» ниже."
-            ),
+            help="Весь интерфейс и база вакансий привязаны к выбранному профилю резюме.",
         )
-        selected_role = roles[labels.index(choice)]
+        selected_id = ids[labels.index(choice)]
         selected_label = choice
-        st.session_state.selected_profile_role = selected_role
-        st.session_state.selected_profile_label = selected_label
+        st.session_state.active_resume_profile_id = selected_id
+        st.session_state.active_resume_profile_label = selected_label
 
-        if prev_role is not None and prev_role != selected_role:
+        if prev_id is not None and prev_id != selected_id:
+            set_active_profile(session, selected_id)
             st.session_state.pop("resume_advice_result", None)
             st.session_state.run_resume_advice = False
             clear_data_cache()
+        elif active and active.id != selected_id:
+            set_active_profile(session, selected_id)
 
-        return selected_role
+        return selected_id
     finally:
         session.close()
 
@@ -71,7 +66,7 @@ def render_resume_upload_sidebar() -> None:
     if st.sidebar.button(
         "📎 Загрузить новое резюме",
         use_container_width=True,
-        help="Заменить CV: AI пересоберёт профиль и ключи поиска",
+        help="Создать новый изолированный профиль с отдельной базой вакансий",
     ):
         start_resume_upload()
         st.rerun()

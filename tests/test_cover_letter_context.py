@@ -34,8 +34,18 @@ def test_first_name_extracts_first_token():
 def test_profile_for_cover_letter_pm_splits_skills():
     raw = profile_for_cover_letter_json(_profile(), target_role="product_manager")
     data = json.loads(raw)
-    assert data["first_name"] == "Андрей"
+    assert data["full_name"] == "Андрей Накимов"
+    assert "name_instruction" in data
     assert "Roadmap" in data["pm_skills"]
     assert "SQL" in data["analyst_tools_supplement"]
     assert any("Запуск" in s for s in data["pm_achievements"])
     assert "Более 10 лет" not in " ".join(data["pm_achievements"])
+
+
+def test_profile_for_cover_letter_includes_resume_header():
+    raw = profile_for_cover_letter_json(
+        _profile(resume_raw="Андрей Накимов\nProduct Manager\n15 лет опыта"),
+        target_role="product_manager",
+    )
+    data = json.loads(raw)
+    assert "Андрей" in data["resume_header_excerpt"]

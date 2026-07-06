@@ -41,6 +41,7 @@ class Company(Base):
     name: Mapped[str] = mapped_column(String(512), nullable=False)
     name_short: Mapped[str | None] = mapped_column(String(255))
     description: Mapped[str | None] = mapped_column(Text)
+    ai_brief: Mapped[str | None] = mapped_column(String(200))
     website: Mapped[str | None] = mapped_column(String(512))
     logo_url: Mapped[str | None] = mapped_column(String(1024))
     industry: Mapped[str | None] = mapped_column(String(128))
@@ -76,7 +77,8 @@ class Location(Base):
 class Vacancy(Base):
     __tablename__ = "vacancies"
     __table_args__ = (
-        UniqueConstraint("source", "external_id", name="uq_vacancy_source_external"),
+        UniqueConstraint("profile_id", "source", "external_id", name="uq_vacancy_profile_source_external"),
+        Index("idx_vacancies_profile", "profile_id"),
         Index("idx_vacancies_published", "published_at"),
         Index("idx_vacancies_salary", "salary_from", "salary_to"),
         Index("idx_vacancies_format", "work_format"),
@@ -84,9 +86,10 @@ class Vacancy(Base):
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    profile_id: Mapped[int] = mapped_column(ForeignKey("candidate_profiles.id", ondelete="CASCADE"), nullable=False)
     source: Mapped[str] = mapped_column(String(32), nullable=False)
     external_id: Mapped[str] = mapped_column(String(128), nullable=False)
-    external_url: Mapped[str] = mapped_column(String(1024), unique=True, nullable=False)
+    external_url: Mapped[str] = mapped_column(String(1024), nullable=False, index=True)
 
     title: Mapped[str] = mapped_column(String(512), nullable=False)
     title_normalized: Mapped[str | None] = mapped_column(String(512))
@@ -124,8 +127,6 @@ class Vacancy(Base):
     scraped_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
     enriched_at: Mapped[datetime | None] = mapped_column(DateTime)
 
-    rule_score: Mapped[int] = mapped_column(Integer, default=0)
-    rule_score_reasons: Mapped[str | None] = mapped_column(Text)
     raw_data: Mapped[str | None] = mapped_column(Text)
 
     search_settings_id: Mapped[int | None] = mapped_column(ForeignKey("search_settings.id"))
@@ -136,6 +137,7 @@ class Vacancy(Base):
 
     company_rel: Mapped["Company | None"] = relationship(back_populates="vacancies")
     location_rel: Mapped["Location | None"] = relationship(back_populates="vacancies")
+    profile_rel: Mapped["CandidateProfile"] = relationship(back_populates="vacancies")
     vacancy_skills: Mapped[list["VacancySkill"]] = relationship(back_populates="vacancy", cascade="all, delete-orphan")
     tags: Mapped[list["VacancyTag"]] = relationship(back_populates="vacancy", cascade="all, delete-orphan")
     matches: Mapped[list["VacancyMatch"]] = relationship(back_populates="vacancy")
@@ -188,7 +190,8 @@ class CandidateProfile(Base):
     __tablename__ = "candidate_profiles"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    resume_path: Mapped[str | None] = mapped_column(String(1024), unique=True)
+    display_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    resume_path: Mapped[str | None] = mapped_column(String(1024))
     resume_raw: Mapped[str | None] = mapped_column(Text)
     full_name: Mapped[str | None] = mapped_column(String(255))
     title: Mapped[str | None] = mapped_column(String(255))
@@ -212,6 +215,7 @@ class CandidateProfile(Base):
 
     search_settings: Mapped[list["SearchSettings"]] = relationship(back_populates="profile")
     matches: Mapped[list["VacancyMatch"]] = relationship(back_populates="profile")
+    vacancies: Mapped[list["Vacancy"]] = relationship(back_populates="profile_rel")
 
 
 class SearchSettings(Base):
@@ -234,6 +238,7 @@ class SearchSettings(Base):
     hh_queries_json: Mapped[str | None] = mapped_column(Text)
     habr_queries_json: Mapped[str | None] = mapped_column(Text)
     geekjob_queries_json: Mapped[str | None] = mapped_column(Text)
+    sources_enabled_json: Mapped[str | None] = mapped_column(Text)
     profile_label: Mapped[str | None] = mapped_column(String(255))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
@@ -334,9 +339,11 @@ class ScanRun(Base):
 
 class DailyMetrics(Base):
     __tablename__ = "daily_metrics"
+    __table_args__ = (UniqueConstraint("profile_id", "metric_date", name="uq_daily_metrics_profile_date"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    metric_date: Mapped[str] = mapped_column(String(10), unique=True, nullable=False)
+    profile_id: Mapped[int] = mapped_column(ForeignKey("candidate_profiles.id", ondelete="CASCADE"), nullable=False)
+    metric_date: Mapped[str] = mapped_column(String(10), nullable=False)
     total_vacancies: Mapped[int | None] = mapped_column(Integer)
     new_7d: Mapped[int | None] = mapped_column(Integer)
     new_30d: Mapped[int | None] = mapped_column(Integer)

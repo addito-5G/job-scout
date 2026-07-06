@@ -7,7 +7,7 @@ import streamlit as st
 from ui.components import format_salary, match_score_class, work_format_label
 from ui.data import cached_opportunity_list, cached_profile_id
 from ui.design_system import COLORS
-from ui.profile_filter import get_selected_profile_role
+from ui.profile_filter import get_active_resume_profile_label
 
 PIPELINE = [
     ("favorite", "⭐ Сохранено", "Готовы к отклику"),
@@ -18,7 +18,6 @@ PIPELINE = [
 
 def render_applications() -> None:
     profile_id = cached_profile_id()
-    profile_role = get_selected_profile_role()
 
     st.markdown(
         '<div class="nm-eyebrow">Отклики</div>'
@@ -34,7 +33,6 @@ def render_applications() -> None:
             0,
             "",
             1,
-            profile_role,
             status=status if status != "new" else None,
         )
         if status == "new":

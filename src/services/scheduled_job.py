@@ -4,11 +4,10 @@ import logging
 from dataclasses import dataclass, field
 from typing import Callable
 
-from config_loader import load_criteria, load_sources
+from config_loader import load_sources
 from db import get_session, init_db
 from db.repositories.scan_repo import finish_scan_run, start_scan_run
-from services.match_service import batch_fast_match
-from services.profile_service import get_latest_profile
+from services.profile_service import get_active_profile
 from services.scan_service import run_scan
 from services.schedule_service import load_schedule
 from services.search_service import get_active_search_settings
@@ -54,11 +53,9 @@ def run_scheduled_update(
 
     try:
         _progress(0.02, "Подготовка...", None)
-        criteria = load_criteria()
         raw_sources = load_sources()
-        min_score = int(criteria.get("thresholds", {}).get("min_score", 0))
 
-        profile = get_latest_profile(session)
+        profile = get_active_profile(session)
         if not profile or not profile.resume_raw:
             result.errors.append("Загрузите резюме перед обновлением")
             result.status = "failed"
@@ -81,24 +78,22 @@ def run_scheduled_update(
         logger.info("Scheduled update started (trigger=%s, run_id=%s)", trigger, run_id)
 
         def scan_progress(frac: float, message: str, source: str | None = None) -> None:
-            _progress(0.1 + frac * 0.45, message, source)
+            _progress(0.1 + frac * 0.9, message, source)
 
-        _progress(0.1, "Сканирование источников...", None)
-        scan = run_scan(session, criteria=criteria, raw_sources=raw_sources, progress=scan_progress)
+        _progress(0.1, "Сканирование и матчинг...", None)
+        scan = run_scan(
+            session,
+            raw_sources=raw_sources,
+            progress=scan_progress,
+            profile_id=profile.id,
+            run_match=True,
+            match_limit=match_limit,
+        )
         result.scraped = scan.scraped
         result.saved = scan.saved
         result.new_count = scan.new_count
+        result.matched = scan.matched_count
         result.errors.extend(scan.errors)
-
-        _progress(0.58, "AI-матчинг вакансий...", None)
-        matched, match_errors = batch_fast_match(
-            session,
-            profile.id,
-            limit=match_limit,
-            min_score=min_score,
-        )
-        result.matched = matched
-        result.errors.extend(match_errors)
 
         hh_found = int(scan.by_source.get("hh_parser", 0) + scan.by_source.get("hh", 0))
         habr_found = int(scan.by_source.get("habr", 0))

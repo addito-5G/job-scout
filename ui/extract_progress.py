@@ -16,12 +16,20 @@ from ui.workflow import go_to
 def run_extract_with_progress() -> None:
     content = st.session_state.get("pending_resume_content", "")
     filename = st.session_state.get("pending_resume_filename", "resume.md")
+    display_name = st.session_state.get("pending_profile_display_name", "").strip()
 
     st.markdown("## Извлекаем ключи из резюме")
     st.info("AI анализирует резюме и подбирает запросы для HeadHunter, Habr и Geekjob.")
 
     if not content.strip():
         st.error("Текст резюме пустой. Вернитесь на шаг 1.")
+        st.session_state.extract_running = False
+        go_to("input")
+        if st.button("← Назад к резюме"):
+            st.rerun()
+        return
+    if not display_name:
+        st.error("Не указано название профиля. Вернитесь на шаг 1.")
         st.session_state.extract_running = False
         go_to("input")
         if st.button("← Назад к резюме"):
@@ -42,9 +50,15 @@ def run_extract_with_progress() -> None:
         profile_title = "профиль"
         try:
             profile, draft = extract_search_keys(
-                session, content, filename=filename, progress=on_progress
+                session,
+                content,
+                display_name=display_name,
+                filename=filename,
+                progress=on_progress,
             )
-            profile_title = profile.title or profile.full_name or "профиль"
+            profile_title = profile.display_name or profile.title or profile.full_name or "профиль"
+            st.session_state.active_resume_profile_id = profile.id
+            st.session_state.active_resume_profile_label = profile.display_name
             st.session_state.search_draft = draft
             st.session_state.processed_resume_id = f"{filename}:{len(content)}"
             apply_draft_to_lists(draft)
@@ -59,6 +73,7 @@ def run_extract_with_progress() -> None:
         st.session_state.extract_running = False
         st.session_state.pop("pending_resume_content", None)
         st.session_state.pop("pending_resume_filename", None)
+        st.session_state.pop("pending_profile_display_name", None)
         st.rerun()
     except Exception as exc:
         progress_bar.empty()

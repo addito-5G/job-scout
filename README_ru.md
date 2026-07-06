@@ -35,9 +35,9 @@
 | Боль | Как помогает NextMove |
 |------|------------------------|
 | Три площадки — три вкладки | Автоскан **hh.ru**, **Habr Career**, **Geekjob** |
-| Сотни вакансий — неясно, куда бить | AI Match % + навыки «есть / нет» |
+| Сотни вакансий — неясно, куда бить | **Fit Score %** — детерминированный матч + что усилить |
 | Смена роли (аналитик → дизайнер → PM) | Фильтр профиля без очистки БД |
-| Отклик отнимает время | Черновик сопроводительного под вакансию |
+| Отклик отнимает время | Черновик письма + мягкий вход в LinkedIn |
 | Нет ощущения прогресса | Воронка откликов и daily briefing |
 
 ---
@@ -47,13 +47,13 @@
 | Раздел | Назначение |
 |--------|------------|
 | **Сегодня** | Daily briefing: главное действие, инсайты, метрики |
-| **Возможности** | Приоритизированный список с match и быстрыми действиями |
+| **Возможности** | Компании → вакансии, fit score, быстрые действия |
 | **Сохранённые / Отклики** | Воронка job search CRM |
 | **Резюме** | AI Resume Coach — что усилить по рынку |
 | **Рынок** | Market Insights — спрос, ЗП, навыки |
 | **Career Agent** | Настройки поиска (роль, ключи, зарплата) |
 
-Пайплайн: **scan → enrich → fast/deep match → cover letter**. Опционально — ежедневный запуск в 09:00 через macOS launchd.
+Пайплайн: **scan → enrich → fit score → cover letter** (+ опционально LinkedIn guest). Опционально — ежедневный запуск в 09:00 через macOS launchd.
 
 ---
 
@@ -63,9 +63,9 @@
 
 1. Загрузка резюме `.md` → `parse_resume` строит профиль (навыки, роли, вилка ЗП)
 2. AI предлагает настройки поиска (`suggest_filters`) — должности, ключи, регионы
-3. Скан подтягивает вакансии с площадок по **вашим** запросам
-4. Match оценивает каждую вакансию относительно **вашего** профиля
-5. Черновик сопроводительного — под конкретную вакансию
+3. Скан подтягивает вакансии с **hh.ru**, **Habr**, **Geekjob**, опционально **LinkedIn** (guest API)
+4. **Fit Score** (`domain/fit_score.py`) — % соответствия, совпадения, пробелы, что усилить
+5. Сопроводительное + мягкий вход в LinkedIn — черновики AI, отправляете вы сами
 
 ```mermaid
 flowchart LR
@@ -74,10 +74,11 @@ flowchart LR
     HH[hh.ru] --> SC[Scan service]
     HB[Habr] --> SC
     GJ[Geekjob] --> SC
+    LI[LinkedIn guest] --> SC
     SC --> DB[(SQLite + Alembic)]
-    DB --> M[AI Match]
-    M --> UI[NextMove UI]
-    M --> CL[Сопроводительное]
+    DB --> F[Fit Score]
+    F --> UI[NextMove UI]
+    F --> CL[Сопроводительное]
 ```
 
 ### AI: бесплатно по умолчанию
@@ -86,9 +87,9 @@ NextMove рассчитан на **нулевую стоимость API** в п
 
 | Провайдер | Стоимость | Дневные лимиты (по умолчанию) | Задачи |
 |-----------|-----------|-------------------------------|--------|
-| **Ollama** (локально) | Бесплатно, без лимита | Нет | Парсинг резюме, fast match, ключи поиска |
-| **YandexGPT** | Бесплатный tier | 50 000 токенов/день | Письма, RU-анализ |
-| **Groq** | Бесплатный tier | 14 000 запросов/день | Глубокий match |
+| **Ollama** (локально) | Бесплатно, без лимита | Нет | Парсинг резюме, ключи поиска |
+| **YandexGPT** | Бесплатный tier | 50 000 токенов/день | Письма, outreach, улучшение резюме |
+| **Groq** | Бесплатный tier | 14 000 запросов/день | Улучшение резюме (опционально) |
 
 **Локальная модель (Ollama):** по умолчанию `qwen2.5:14b` (`OLLAMA_MODEL` в `.env`). Установите [Ollama](https://ollama.com), затем:
 
@@ -100,9 +101,10 @@ ollama pull qwen2.5:14b
 
 | Задача | Primary | Цепочка fallback |
 |--------|---------|------------------|
-| `parse_resume`, `fast_match`, `suggest_filters` | **Ollama** | Yandex → Groq |
-| `generate_cover_letter` | **YandexGPT** | Groq → **Ollama** |
-| `match_vacancy_deep`, `improve_resume` | **Groq** | Yandex → **Ollama** |
+| `parse_resume`, `suggest_filters` | **Ollama** | Yandex → Groq |
+| `generate_cover_letter`, `generate_linkedin_outreach`, `improve_resume` | **YandexGPT** | Groq → **Ollama** |
+
+**Fit Score** считается локально (без LLM) — стабильный %, совпадения/пробелы и «что усилить».
 
 Для полностью офлайн / безлимитной работы держите Ollama запущенной — у неё нет дневных квот.
 
@@ -132,7 +134,7 @@ cp .env.example .env
 | Переменная | Назначение |
 |------------|------------|
 | `OLLAMA_MODEL` | Локальная модель, по умолчанию **`qwen2.5:14b`** |
-| `GROQ_API_KEY` | Глубокий анализ вакансий |
+| `GROQ_API_KEY` | Опционально — fallback для улучшения резюме |
 | `YC_FOLDER_ID`, `YC_KEY_PATH` | YandexGPT для писем |
 | `CONTACT_PHONE`, `CONTACT_TELEGRAM`, `CONTACT_LINKEDIN` | Подпись в письмах |
 | `DATABASE_URL` | Путь к SQLite (по умолчанию `sqlite:///./data/vacancies.db`) |
@@ -156,7 +158,7 @@ streamlit run app.py --server.port 8502
 ```bash
 python scripts/setup.py      # профиль + настройки поиска (AI)
 python scripts/scan.py       # сбор вакансий
-python scripts/match.py --limit 50
+python scripts/match.py --limit 50   # fit score
 ```
 
 ### Опционально: enrich и расписание
@@ -183,7 +185,7 @@ job-scout/                    # имя репозитория (UI-бренд: Ne
     ├── config.py             # загрузка .env
     ├── config_loader.py      # YAML-конфиги
     ├── cli_logging.py        # общее логирование CLI
-    ├── domain/               # доменные типы (роль и т.д.)
+    ├── domain/               # fit_score, типы ролей
     ├── ai/                   # router, cache, prompts
     ├── db/
     │   ├── tables.py         # SQLAlchemy ORM (источник истины)
@@ -209,7 +211,7 @@ job-scout/                    # имя репозитория (UI-бренд: Ne
 | `python scripts/init_db.py` | Создать / обновить схему SQLite |
 | `python scripts/setup.py` | Полная настройка: профиль + поиск |
 | `python scripts/scan.py` | Сканирование источников |
-| `python scripts/match.py --limit 50` | AI-матчинг |
+| `python scripts/match.py --limit 50` | Fit score для вакансий |
 | `python scripts/enrich.py` | Обогащение описаний |
 | `python scripts/review.py list` | Очередь в терминале |
 | `python scripts/daily_update.py` | Пайплайн по расписанию |

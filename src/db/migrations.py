@@ -27,6 +27,10 @@ def apply_migrations(engine: Engine) -> None:
 
     ensure_schema(engine)
 
+    from db.profile_migrate import ensure_profile_schema
+
+    ensure_profile_schema(engine)
+
     inspector = inspect(engine)
     has_app_tables = "vacancies" in inspector.get_table_names()
 

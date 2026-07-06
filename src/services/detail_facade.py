@@ -5,9 +5,9 @@ from __future__ import annotations
 from db.models import CandidateProfile, Vacancy
 from db.repositories.vacancy_repo import get_vacancy_by_id
 from services.cover_letter_service import generate_cover_letter, normalize_cover_letter
-from services.match_service import deep_match_vacancy, fast_match_vacancy
-from services.profile_service import get_latest_profile
-from services.vacancy_service import MatchSelection, VacancyDetail, get_vacancy_detail
+from services.linkedin_outreach_service import generate_linkedin_outreach, linkedin_people_search_url
+from services.match_service import compute_fit_match
+from services.vacancy_service import VacancyDetail, get_vacancy_detail
 from sqlalchemy.orm import Session
 
 
@@ -22,23 +22,19 @@ def load_detail(
 def load_profile(session: Session, profile_id: int | None) -> CandidateProfile | None:
     if not profile_id:
         return None
-    return get_latest_profile(session)
+    return session.get(CandidateProfile, profile_id)
 
 
 def load_vacancy(session: Session, vacancy_id: int) -> Vacancy | None:
     return get_vacancy_by_id(session, vacancy_id)
 
 
-def best_match(detail: VacancyDetail) -> MatchSelection:
-    return MatchSelection.pick(detail.fast_match, detail.deep_match)
+def best_match(detail: VacancyDetail) -> dict | None:
+    return detail.fit_match
 
 
-def run_fast_match(session: Session, profile: CandidateProfile, vacancy: Vacancy) -> dict:
-    return fast_match_vacancy(session, profile, vacancy)
-
-
-def run_deep_match(session: Session, profile: CandidateProfile, vacancy: Vacancy) -> dict:
-    return deep_match_vacancy(session, profile, vacancy)
+def refresh_fit_match(session: Session, profile: CandidateProfile, vacancy: Vacancy) -> dict:
+    return compute_fit_match(session, profile, vacancy)
 
 
 def generate_letter(
@@ -53,3 +49,29 @@ def generate_letter(
 
 def normalize_letter(letter: str, profile: CandidateProfile) -> str:
     return normalize_cover_letter(letter, profile)
+
+
+def generate_outreach(
+    session: Session,
+    profile: CandidateProfile,
+    vacancy: Vacancy,
+    *,
+    contact_role: str = "recruiter",
+    use_cache: bool = False,
+) -> str:
+    return generate_linkedin_outreach(
+        session,
+        profile,
+        vacancy,
+        contact_role=contact_role,
+        use_cache=use_cache,
+    )
+
+
+def people_search_url(vacancy: Vacancy, *, contact_role: str = "recruiter") -> str:
+    company = vacancy.company_rel.name if vacancy.company_rel else ""
+    return linkedin_people_search_url(
+        company=company,
+        vacancy_title=vacancy.title,
+        contact_role=contact_role,
+    )

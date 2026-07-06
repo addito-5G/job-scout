@@ -9,6 +9,7 @@ ADAPTER_LABELS: dict[str, str] = {
     "hh_parser": "HeadHunter",
     "hh": "HeadHunter",
     "geekjob": "Geekjob",
+    "linkedin": "LinkedIn",
     "habr_rss": "Habr RSS",
     "manual": "Вручную",
 }

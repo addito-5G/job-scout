@@ -8,7 +8,7 @@ import streamlit as st
 
 from db import get_session, init_db
 from services.parse_estimate import estimate_parse_seconds
-from services.profile_service import get_latest_profile
+from services.profile_service import get_active_profile
 from services.schedule_service import save_schedule
 from services.search_service import (
     build_search_draft,
@@ -16,6 +16,7 @@ from services.search_service import (
     save_search_settings,
     search_settings_to_data,
     settings_to_habr_queries_from_data,
+    settings_to_linkedin_queries_from_data,
     settings_to_queries_from_data,
 )
 from ui.data import clear_data_cache
@@ -57,7 +58,7 @@ def render_keywords_step(*, setup_mode: bool = False) -> None:
     init_db()
     session = get_session()
     try:
-        profile = get_latest_profile(session)
+        profile = get_active_profile(session)
         if not profile or not profile.resume_raw:
             st.warning("Сначала загрузите резюме.")
             if st.button("← К резюме"):
@@ -71,7 +72,35 @@ def render_keywords_step(*, setup_mode: bool = False) -> None:
         rev = sync_keyword_lists(draft, sync_id=sync_id)
 
         if profile.title:
-            st.success(f"Целевая должность: **{profile.title}**")
+            st.success(f"Профиль: **{profile.display_name}** · должность: **{profile.title}**")
+
+        st.markdown("**Источники вакансий**")
+        src_cols = st.columns(4)
+        sources_enabled = draft.get("sources_enabled") or {
+            "hh_parser": True,
+            "habr_parser": True,
+            "geekjob_parser": True,
+            "linkedin_parser": False,
+        }
+        with src_cols[0]:
+            sources_enabled["hh_parser"] = st.checkbox("HeadHunter", value=sources_enabled.get("hh_parser", True))
+        with src_cols[1]:
+            sources_enabled["habr_parser"] = st.checkbox("Habr Career", value=sources_enabled.get("habr_parser", True))
+        with src_cols[2]:
+            sources_enabled["geekjob_parser"] = st.checkbox("Geekjob", value=sources_enabled.get("geekjob_parser", True))
+        with src_cols[3]:
+            sources_enabled["linkedin_parser"] = st.checkbox(
+                "LinkedIn",
+                value=sources_enabled.get("linkedin_parser", False),
+                help="Публичный парсинг без входа в аккаунт",
+            )
+
+        if sources_enabled.get("linkedin_parser"):
+            draft["linkedin_location"] = st.text_input(
+                "Регион LinkedIn",
+                value=draft.get("linkedin_location") or "Russia",
+                help="Geo для guest API: Russia, Moscow, United States…",
+            )
 
         if st.button("🔄 Переподобрать ключи через AI", type="secondary"):
             with st.spinner("Ollama подбирает ключи..."):
@@ -122,12 +151,14 @@ def render_keywords_step(*, setup_mode: bool = False) -> None:
             "desired_titles": desired_titles or keywords_include[:3],
             "keywords_include": keywords_include,
             "keywords_exclude": keywords_exclude,
+            "sources_enabled": sources_enabled,
         }
         hh_queries = settings_to_queries_from_data(preview_data)
         habr_queries = settings_to_habr_queries_from_data(preview_data)
+        linkedin_queries = settings_to_linkedin_queries_from_data(preview_data)
 
         with st.expander("Как будут выглядеть запросы на площадках", expanded=False):
-            p1, p2, p3 = st.columns(3)
+            p1, p2, p3, p4 = st.columns(4)
             with p1:
                 st.markdown("**HeadHunter**")
                 for q in hh_queries:
@@ -140,6 +171,14 @@ def render_keywords_step(*, setup_mode: bool = False) -> None:
                 st.markdown("**Geekjob**")
                 for q in habr_queries:
                     st.markdown(f"- {q}")
+            with p4:
+                st.markdown("**LinkedIn**")
+                if linkedin_queries:
+                    for q in linkedin_queries:
+                        remote = " · remote" if q.get("remote_only") else ""
+                        st.markdown(f"- {q.get('keywords')} ({q.get('location')}{remote})")
+                else:
+                    st.caption("Включите LinkedIn и добавьте должности/ключи")
 
         schedule_data = render_schedule_settings(expanded=setup_mode or not get_active_search_settings(session, profile.id))
 

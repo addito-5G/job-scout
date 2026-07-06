@@ -1,20 +1,21 @@
+"""Сервис матчинга: единый детерминированный fit score."""
+
 from __future__ import annotations
 
 import json
 import logging
 
-from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
-from ai import AIRouter
-from ai.schemas.match import VacancyMatchSchema
 from db.models import CandidateProfile, Vacancy
 from db.repositories.match_repo import upsert_match
 from db.repositories.vacancy_repo import get_vacancy_skills, list_for_matching
-from services.profile_serialization import to_match_json as profile_to_json
-from services.profile_service import get_latest_profile
+from domain.fit_score import fit_from_profile_model, fit_to_match_dict
+from services.profile_service import get_active_profile
 
 logger = logging.getLogger(__name__)
+
+MATCH_LEVEL = "fit"
 
 
 def vacancy_to_json(session: Session, vacancy: Vacancy) -> str:
@@ -36,96 +37,51 @@ def vacancy_to_json(session: Session, vacancy: Vacancy) -> str:
     return json.dumps(data, ensure_ascii=False)
 
 
-def _parse_match_result(parsed: dict | None) -> dict:
-    if not parsed:
-        return {
-            "match_score": 0,
-            "match_summary": "Не удалось разобрать ответ AI",
-            "matched_skills": [],
-            "missing_skills": [],
-            "recommendation": "skip",
-        }
-    try:
-        schema = VacancyMatchSchema.model_validate(parsed)
-        return schema.model_dump()
-    except ValidationError:
-        return {
-            "match_score": int(parsed.get("match_score", 0)),
-            "match_summary": parsed.get("match_summary", ""),
-            "matched_skills": parsed.get("matched_skills", []),
-            "missing_skills": parsed.get("missing_skills", []),
-            "strengths": parsed.get("strengths", []),
-            "risks": parsed.get("risks", []),
-            "recommendation": parsed.get("recommendation", "skip"),
-            "deep_analysis": parsed.get("deep_analysis", ""),
-        }
-
-
-def fast_match_vacancy(
+def compute_fit_match(
     session: Session,
     profile: CandidateProfile,
     vacancy: Vacancy,
-    router: AIRouter | None = None,
 ) -> dict:
-    router = router or AIRouter(session)
-    payload = {
-        "profile_id": profile.id,
-        "vacancy_id": vacancy.id,
-        "profile_json": profile_to_json(profile),
-        "vacancy_json": vacancy_to_json(session, vacancy),
-    }
-    result = router.route("fast_match", payload, parse_json=True)
-    data = _parse_match_result(result.parsed)
-    upsert_match(session, vacancy.id, profile.id, "fast", data)
+    skills = get_vacancy_skills(session, vacancy.id)
+    result = fit_from_profile_model(profile, vacancy, skills)
+    data = fit_to_match_dict(result)
+    upsert_match(session, vacancy.id, profile.id, MATCH_LEVEL, data)
     return data
 
 
-def deep_match_vacancy(
-    session: Session,
-    profile: CandidateProfile,
-    vacancy: Vacancy,
-    router: AIRouter | None = None,
-) -> dict:
-    router = router or AIRouter(session)
-    payload = {
-        "profile_id": profile.id,
-        "vacancy_id": vacancy.id,
-        "profile_json": profile_to_json(profile),
-        "vacancy_json": vacancy_to_json(session, vacancy),
-    }
-    result = router.route("match_vacancy_deep", payload, parse_json=True)
-    data = _parse_match_result(result.parsed)
-    upsert_match(session, vacancy.id, profile.id, "deep", data)
-    return data
-
-
-def batch_fast_match(
+def batch_fit_match(
     session: Session,
     profile_id: int | None = None,
-    limit: int = 30,
-    min_score: int = 0,
+    limit: int = 50,
+    priority_vacancy_ids: list[int] | None = None,
 ) -> tuple[int, list[str]]:
-    profile = session.get(CandidateProfile, profile_id) if profile_id else get_latest_profile(session)
+    profile = session.get(CandidateProfile, profile_id) if profile_id else get_active_profile(session)
     if not profile:
-        return 0, ["Профиль кандидата не найден. Запустите scripts/setup.py"]
+        return 0, ["Профиль кандидата не найден. Загрузите резюме."]
+
+    if not profile.resume_raw and not profile.skills_json:
+        return 0, ["Профиль пуст — загрузите резюме для расчёта соответствия."]
 
     vacancies = list_for_matching(
-        session, profile.id, match_level="fast", limit=limit, min_score=min_score
+        session,
+        profile.id,
+        match_level=MATCH_LEVEL,
+        limit=limit,
+        priority_vacancy_ids=priority_vacancy_ids,
     )
     if not vacancies:
         return 0, []
 
-    router = AIRouter(session)
     matched = 0
     errors: list[str] = []
 
     for v in vacancies:
         try:
-            data = fast_match_vacancy(session, profile, v, router=router)
+            data = compute_fit_match(session, profile, v)
             matched += 1
-            logger.info("match #%s [%s%%] %s", v.id, data["match_score"], v.title[:45])
+            logger.info("fit #%s [%s%%] %s", v.id, data["match_score"], v.title[:45])
         except Exception as exc:
             errors.append(f"#{v.id}: {exc}")
-            logger.warning("match #%s failed: %s", v.id, exc)
+            logger.warning("fit #%s failed: %s", v.id, exc)
 
     return matched, errors

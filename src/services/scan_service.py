@@ -1,18 +1,30 @@
 from __future__ import annotations
 
+import json
 import logging
 from dataclasses import dataclass, field
 
-from config_loader import load_criteria, load_sources
+from config_loader import load_sources
 from adapters.registry import build_adapters
-from scoring import score_vacancy
-from services.profile_service import get_latest_profile
+from services.profile_service import get_active_profile
 from services.scan_progress import ScanProgressFn, label_for
-from services.search_service import get_active_search_settings, settings_to_habr_queries, settings_to_queries
+from services.search_service import (
+    get_active_search_settings,
+    settings_to_habr_queries,
+    settings_to_linkedin_queries,
+    settings_to_queries,
+)
 from services.vacancy_service import upsert_scored_vacancy
 from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_SOURCES = {
+    "hh_parser": True,
+    "habr_parser": True,
+    "geekjob_parser": True,
+    "linkedin_parser": False,
+}
 
 
 @dataclass
@@ -21,66 +33,107 @@ class ScanResult:
     saved: int = 0
     new_count: int = 0
     updated_count: int = 0
-    priority_count: int = 0
+    skipped_count: int = 0
+    matched_count: int = 0
     by_source: dict[str, int] = field(default_factory=dict)
     errors: list[str] = field(default_factory=list)
+    match_errors: list[str] = field(default_factory=list)
+    pending_match_ids: list[int] = field(default_factory=list)
+
+
+def _enabled_sources(settings) -> dict[str, bool]:
+    if not settings or not settings.sources_enabled_json:
+        return dict(DEFAULT_SOURCES)
+    try:
+        data = json.loads(settings.sources_enabled_json)
+        if isinstance(data, dict):
+            return {**DEFAULT_SOURCES, **{k: bool(v) for k, v in data.items()}}
+    except json.JSONDecodeError:
+        pass
+    return dict(DEFAULT_SOURCES)
+
+
+def _apply_source_toggles(sources: dict, enabled: dict[str, bool]) -> dict:
+    out = dict(sources)
+    for key in ("hh_parser", "habr_parser", "geekjob_parser", "linkedin_parser"):
+        if key in out:
+            out[key] = {**out[key], "enabled": enabled.get(key, out[key].get("enabled", True))}
+    return out
 
 
 def run_scan(
     session: Session,
     *,
-    criteria: dict | None = None,
     raw_sources: dict | None = None,
     manual_url: str | None = None,
     manual_title: str = "",
     manual_company: str = "",
-    display_min: int | None = None,
     progress: ScanProgressFn | None = None,
+    profile_id: int | None = None,
+    run_match: bool = True,
+    match_limit: int = 50,
 ) -> ScanResult:
-    criteria = criteria or load_criteria()
     raw_sources = raw_sources or load_sources()
-    sources = raw_sources.get("sources", raw_sources)
-    browser = raw_sources.get("browser", {})
+    sources_root = raw_sources.get("sources", raw_sources)
+    browser = {**raw_sources.get("browser", {}), "engine": "requests", "use_for_scan": True}
 
-    display_min = display_min if display_min is not None else criteria.get("thresholds", {}).get("min_score", 55)
-    priority = criteria.get("thresholds", {}).get("priority_score", 70)
+    profile = None
+    if profile_id is not None:
+        from services.profile_service import get_profile
 
-    profile = get_latest_profile(session)
+        profile = get_profile(session, profile_id)
+    if profile is None:
+        profile = get_active_profile(session)
+    if not profile:
+        if progress:
+            progress(1.0, "Нет активного профиля резюме", None)
+        return ScanResult()
+
     db_queries = None
     habr_queries = None
     geekjob_queries = None
+    linkedin_queries = None
     active_settings_id: int | None = None
-    if profile:
-        settings = get_active_search_settings(session, profile.id)
-        if settings:
-            active_settings_id = settings.id
-            db_queries = settings_to_queries(settings)
-            habr_queries = settings_to_habr_queries(settings)
-            geekjob_queries = settings_to_habr_queries(settings)
-            logger.info("Настройки из профиля #%s (settings #%s)", profile.id, settings.id)
+    settings = get_active_search_settings(session, profile.id)
+    if settings:
+        active_settings_id = settings.id
+        db_queries = settings_to_queries(settings)
+        habr_queries = settings_to_habr_queries(settings)
+        geekjob_queries = settings_to_habr_queries(settings)
+        linkedin_queries = settings_to_linkedin_queries(settings)
+        logger.info("Настройки из профиля #%s (settings #%s)", profile.id, settings.id)
+
+    sources = _apply_source_toggles(sources_root, _enabled_sources(settings))
 
     if habr_queries and sources.get("habr_parser"):
         sources = {**sources, "habr_parser": {**sources.get("habr_parser", {}), "queries": habr_queries}}
     if geekjob_queries and sources.get("geekjob_parser"):
         sources = {**sources, "geekjob_parser": {**sources.get("geekjob_parser", {}), "queries": geekjob_queries}}
+    if linkedin_queries and sources.get("linkedin_parser"):
+        sources = {
+            **sources,
+            "linkedin_parser": {**sources.get("linkedin_parser", {}), "queries": linkedin_queries},
+        }
 
     adapters = build_adapters(
         sources,
         browser,
         db_queries=db_queries,
+        linkedin_queries=linkedin_queries,
         manual_url=manual_url,
         manual_title=manual_title,
         manual_company=manual_company,
     )
 
     result = ScanResult()
+    pending_match_ids: list[int] = []
     adapter_count = len(adapters)
     if adapter_count == 0:
         if progress:
             progress(1.0, "Нет активных источников", None)
         return result
 
-    per_adapter = 1.0 / adapter_count
+    per_adapter = 0.85 / adapter_count
 
     for adapter_index, adapter in enumerate(adapters):
         label = label_for(adapter.name)
@@ -96,15 +149,17 @@ def run_scan(
         if progress:
             progress(base_frac, f"Старт — {label}", adapter.name)
 
-        logger.info("Сканирование: %s", adapter.name)
+        logger.info("Сканирование: %s (профиль #%s)", adapter.name, profile.id)
         try:
             for raw in adapter.fetch():
                 result.scraped += 1
                 source_count += 1
-                scored = score_vacancy(raw, criteria)
                 try:
-                    _, is_new = upsert_scored_vacancy(
-                        session, scored, search_settings_id=active_settings_id
+                    vacancy_id, outcome = upsert_scored_vacancy(
+                        session,
+                        raw,
+                        profile_id=profile.id,
+                        search_settings_id=active_settings_id,
                     )
                 except Exception as exc:
                     session.rollback()
@@ -113,13 +168,17 @@ def run_scan(
                     logger.warning(msg)
                     continue
 
-                result.saved += 1
-                if is_new:
+                if outcome == "new":
+                    result.saved += 1
                     result.new_count += 1
-                else:
+                elif outcome == "meta_updated":
+                    result.saved += 1
                     result.updated_count += 1
-                if scored.score >= priority:
-                    result.priority_count += 1
+                else:
+                    result.skipped_count += 1
+
+                if outcome in ("new", "meta_updated"):
+                    pending_match_ids.append(vacancy_id)
 
                 if progress:
                     sub = min(0.95, source_count / max(source_count + 5, 40))
@@ -141,5 +200,26 @@ def run_scan(
                 f"{label}: готово ({source_count})",
                 adapter.name,
             )
+
+    result.pending_match_ids = list(dict.fromkeys(pending_match_ids))
+
+    if run_match and (profile.resume_raw or profile.skills_json):
+        from services.match_service import batch_fit_match
+
+        if progress:
+            progress(0.92, "Расчёт соответствия резюме…", None)
+
+        matched, match_errors = batch_fit_match(
+            session,
+            profile.id,
+            limit=match_limit,
+            priority_vacancy_ids=result.pending_match_ids,
+        )
+        result.matched_count = matched
+        result.match_errors = match_errors
+        result.errors.extend(match_errors)
+
+        if progress:
+            progress(1.0, f"Соответствие: {matched} вакансий", None)
 
     return result

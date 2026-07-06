@@ -67,7 +67,51 @@ def work_format_label(fmt: str | None) -> str:
     return labels.get(fmt or "", fmt or "—")
 
 
-def render_opportunity_card(item: dict, *, profile_id: int | None) -> None:
+def render_company_card(item: dict) -> None:
+    """Карточка работодателя в списке возможностей."""
+    cid = item["id"]
+    score = item.get("best_match_score")
+    mc = match_score_class(score)
+    count = item.get("vacancy_count", 0)
+    n_word = "вакансия" if count % 10 == 1 and count % 100 != 11 else "вакансий"
+    if count % 10 in (2, 3, 4) and count % 100 not in (12, 13, 14):
+        n_word = "вакансии"
+
+    sources = item.get("sources") or []
+    source_labels = ", ".join(source_label(s) for s in sources[:3]) if sources else "—"
+    brief = (item.get("ai_brief") or "").strip()
+    brief_html = (
+        f'<div style="margin-top:0.65rem;font-size:0.82rem;color:{COLORS["text_muted"]};'
+        f'line-height:1.45">{brief}</div>'
+        if brief
+        else f'<div style="margin-top:0.65rem;font-size:0.82rem;color:{COLORS["text_subtle"]}">'
+        f"Краткая справка появится при открытии компании</div>"
+    )
+
+    st.markdown(
+        f'<div class="nm-card">'
+        f'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem">'
+        f'<div style="flex:1;min-width:0">'
+        f'<div style="font-weight:600;font-size:1.05rem;margin-bottom:0.25rem">{item["name"]}</div>'
+        f'<div style="color:{COLORS["text_muted"]};font-size:0.82rem">'
+        f"{count} {n_word} · {source_labels}"
+        f"</div>"
+        f"{brief_html}"
+        f"</div>"
+        f'<div style="text-align:right;flex-shrink:0">'
+        f'<div class="nm-match-lg {mc}">{score or "—"}%</div>'
+        f'<div style="font-size:0.7rem;color:{COLORS["text_subtle"]}">лучший match</div>'
+        f"</div></div></div>",
+        unsafe_allow_html=True,
+    )
+
+    if st.button("Смотреть вакансии →", key=f"company_{cid}", use_container_width=True):
+        st.session_state.selected_company_id = cid
+        st.session_state.opp_page = 1
+        st.rerun()
+
+
+def render_opportunity_card(item: dict, *, profile_id: int | None, hide_company: bool = False) -> None:
     """Linear-style dense opportunity card."""
     vid = item["id"]
     score = item.get("match_score")
@@ -77,6 +121,9 @@ def render_opportunity_card(item: dict, *, profile_id: int | None) -> None:
     source = source_label(item.get("source", "")) if item.get("source") else ""
     rec = item.get("recommendation") or ""
     rec_label = recommendation_label(rec, short=True)
+    company_part = ""
+    if not hide_company:
+        company_part = f'{item.get("company") or "—"} · '
 
     st.markdown(
         f'<div class="nm-card">'
@@ -84,7 +131,7 @@ def render_opportunity_card(item: dict, *, profile_id: int | None) -> None:
         f'<div style="flex:1;min-width:0">'
         f'<div style="font-weight:600;font-size:1rem;margin-bottom:0.25rem">{item["title"]}</div>'
         f'<div style="color:{COLORS["text_muted"]};font-size:0.82rem">'
-        f'{item.get("company") or "—"} · {wf} · {salary}'
+        f'{company_part}{wf} · {salary}'
         f"</div>"
         f'<div style="margin-top:0.5rem">'
         f'<span class="nm-badge">{source}</span> '

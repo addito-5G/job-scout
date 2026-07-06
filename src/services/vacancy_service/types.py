@@ -8,12 +8,7 @@ from datetime import datetime
 
 @dataclass
 class VacancyFilters:
-    """Фильтры списка вакансий.
-
-    Скоринг:
-    - ``min_match_score`` — порог AI-match (``vacancy_matches.match_score``, fast/deep).
-    - Поле ``score`` в ``VacancyListItem`` — rule-based ``Vacancy.rule_score`` из criteria.yaml при скане.
-    """
+    """Фильтры списка вакансий."""
 
     salary_min: int | None = None
     salary_max: int | None = None
@@ -28,6 +23,29 @@ class VacancyFilters:
     hide_hidden: bool = True
     page: int = 1
     per_page: int = 30
+    company_id: int | None = None
+
+
+@dataclass
+class CompanyListItem:
+    id: int
+    name: str
+    ai_brief: str | None
+    website: str | None
+    vacancy_count: int
+    best_match_score: int | None
+    sources: list[str]
+
+
+@dataclass
+class CompanyDetail:
+    id: int
+    name: str
+    ai_brief: str | None
+    website: str | None
+    description: str | None
+    vacancy_count: int
+    best_match_score: int | None
 
 
 @dataclass
@@ -44,7 +62,6 @@ class VacancyListItem:
     recommendation: str | None
     status: str
     url: str
-    score: int  # rule_score (criteria.yaml), не AI match_score
     published_at: datetime | None
     tags: list[str]
     source: str = ""
@@ -71,9 +88,7 @@ class VacancyDetail:
     employment: str | None
     experience: str | None
     status: str
-    score: int  # rule_score (criteria.yaml)
     cover_letter: str | None
     source: str
     published_at: datetime | None
-    fast_match: dict | None
-    deep_match: dict | None
+    fit_match: dict | None

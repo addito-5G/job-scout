@@ -8,13 +8,13 @@ TASK_ROUTING: dict[str, str] = {
     "extract_skills": "ollama",
     "extract_skills_ru": "yandex",
     "categorize_vacancy": "ollama",
-    "fast_match": "ollama",
     "analyze_resume_ru": "yandex",
-    "match_vacancy_deep": "groq",
     "profile_gaps": "groq",
-    "improve_resume": "groq",
+    "improve_resume": "yandex",
     "generate_cover_letter": "yandex",
+    "generate_linkedin_outreach": "yandex",
     "suggest_filters": "ollama",
+    "company_brief": "yandex",
 }
 
 FALLBACK_CHAIN: dict[str, list[str]] = {
@@ -29,8 +29,7 @@ CACHE_TTL_DAYS: dict[str, int] = {
     "analyze_resume_ru": 7,
     "extract_skills": 30,
     "extract_skills_ru": 30,
-    "fast_match": 14,
-    "match_vacancy_deep": 14,
     "improve_resume": 7,
+    "company_brief": 30,
     "default": 30,
 }

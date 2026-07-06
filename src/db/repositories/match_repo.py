@@ -58,7 +58,7 @@ def get_match(
     session: Session,
     vacancy_id: int,
     profile_id: int,
-    match_level: str = "fast",
+    match_level: str = "fit",
 ) -> VacancyMatch | None:
     return session.execute(
         select(VacancyMatch).where(
@@ -76,7 +76,7 @@ def save_cover_letter_draft(
     letter: str,
 ) -> None:
     """Сохранить письмо, не затирая данные матча."""
-    for level in ("deep", "fast"):
+    for level in ("fit", "deep", "fast"):
         row = get_match(session, vacancy_id, profile_id, level)
         if row:
             row.cover_letter_draft = letter
@@ -85,9 +85,9 @@ def save_cover_letter_draft(
     row = VacancyMatch(
         vacancy_id=vacancy_id,
         profile_id=profile_id,
-        match_level="fast",
+        match_level="fit",
         match_score=0.0,
-        recommendation="consider",
+        recommendation="improve_resume",
         cover_letter_draft=letter,
     )
     session.add(row)

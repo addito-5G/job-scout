@@ -66,7 +66,8 @@ def run_parse_with_progress() -> None:
         main_progress.progress(1.0, text=done_text)
         sidebar_timer.markdown("⏱ Прошло **готово**")
         st.sidebar.success(
-            f"Готово: {result.scraped} вакансий, новых {result.new_count}"
+            f"Готово: {result.scraped} вакансий, новых {result.new_count}, "
+            f"матчинг {result.matched}"
         )
         st.session_state.app_unlocked = True
         go_to("app")
@@ -74,7 +75,8 @@ def run_parse_with_progress() -> None:
             st.session_state.view = "today"
         st.success(
             f"Собрано **{result.scraped}** вакансий (новых **{result.new_count}**). "
-            f"Откройте дашборд или площадки в сайдбаре."
+            f"AI-матчинг: **{result.matched}** вакансий. "
+            f"Откройте «Сегодня» или «Возможности»."
         )
         if result.errors:
             st.warning(f"Частичные ошибки: {result.errors[0][:200]}")

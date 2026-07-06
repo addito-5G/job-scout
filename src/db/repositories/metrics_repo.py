@@ -1,22 +1,35 @@
 from __future__ import annotations
 
 import json
-
 from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
-from db.models import DailyMetrics, Vacancy
+from db.models import DailyMetrics, Vacancy, VacancyMatch
 from db.repositories.vacancy_repo import count_new_vacancies
 
 
 def vacancy_stats(session: Session) -> dict:
+    fit_subq = (
+        select(
+            VacancyMatch.vacancy_id,
+            func.max(VacancyMatch.match_score).label("best_score"),
+        )
+        .where(VacancyMatch.match_level.in_(("fit", "deep", "fast")))
+        .group_by(VacancyMatch.vacancy_id)
+        .subquery()
+    )
     row = session.execute(
         select(
             func.count().label("total"),
-            func.sum(case((Vacancy.rule_score >= 40, 1), else_=0)).label("fit"),
-            func.sum(case(((Vacancy.rule_score < 40) & (Vacancy.rule_score > 0), 1), else_=0)).label("maybe"),
-            func.sum(case((Vacancy.rule_score == 0, 1), else_=0)).label("not_fit"),
-            func.avg(Vacancy.rule_score).label("avg_score"),
+            func.sum(case((fit_subq.c.best_score >= 50, 1), else_=0)).label("fit"),
+            func.sum(
+                case(
+                    ((fit_subq.c.best_score < 50) & (fit_subq.c.best_score > 0), 1),
+                    else_=0,
+                )
+            ).label("maybe"),
+            func.sum(case((fit_subq.c.best_score.is_(None), 1), else_=0)).label("not_fit"),
+            func.avg(fit_subq.c.best_score).label("avg_score"),
             func.sum(
                 case(
                     (
@@ -26,7 +39,10 @@ def vacancy_stats(session: Session) -> dict:
                     else_=0,
                 )
             ).label("enriched"),
-        ).where(Vacancy.is_active.is_(True))
+        )
+        .select_from(Vacancy)
+        .outerjoin(fit_subq, fit_subq.c.vacancy_id == Vacancy.id)
+        .where(Vacancy.is_active.is_(True))
     ).one()
     return {
         "total": row.total or 0,

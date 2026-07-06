@@ -4,7 +4,9 @@ from adapters.base import HabrRssAdapter, ManualUrlAdapter
 from adapters.geekjob_parser import GeekjobParserAdapter
 from adapters.habr_parser import HabrParserAdapter
 from adapters.hh_parser import HhParserAdapter
+from adapters.linkedin_parser import LinkedinJobUrlAdapter, LinkedinParserAdapter
 from browser.fetcher import PageFetcher, create_fetcher
+from parsers.linkedin_jobs import is_linkedin_job_url
 
 
 def build_adapters(
@@ -12,6 +14,7 @@ def build_adapters(
     browser_cfg: dict,
     *,
     db_queries: list[dict] | None = None,
+    linkedin_queries: list[dict] | None = None,
     manual_url: str | None = None,
     manual_title: str = "",
     manual_company: str = "",
@@ -21,13 +24,16 @@ def build_adapters(
 
     if browser_cfg.get("use_for_scan") or browser_cfg.get("engine") == "drission":
         fetcher = create_fetcher(
-            engine=browser_cfg.get("engine", "auto"),
+            engine=browser_cfg.get("engine", "requests"),
             headless=browser_cfg.get("headless", True),
             delay_seconds=float(browser_cfg.get("delay_seconds", 2)),
         )
 
     if manual_url:
-        adapters.append(ManualUrlAdapter(manual_url, manual_title, manual_company))
+        if is_linkedin_job_url(manual_url):
+            adapters.append(LinkedinJobUrlAdapter(manual_url, fetcher=fetcher))
+        else:
+            adapters.append(ManualUrlAdapter(manual_url, manual_title, manual_company))
         return adapters
 
     habr_html = sources_cfg.get("habr_parser", {})
@@ -64,6 +70,21 @@ def build_adapters(
                 pages_per_query=int(gj.get("pages_per_query", 2)),
                 delay_seconds=float(gj.get("delay_seconds", 2)),
                 fetcher=fetcher,
+            )
+        )
+
+    li = sources_cfg.get("linkedin_parser", {})
+    if li.get("enabled"):
+        queries = linkedin_queries or li.get("queries", [])
+        adapters.append(
+            LinkedinParserAdapter(
+                queries=queries,
+                pages_per_query=int(li.get("pages_per_query", 2)),
+                delay_seconds=float(li.get("delay_seconds", 3)),
+                fetcher=fetcher,
+                location=str(li.get("location", "Russia")),
+                f_TPR=str(li.get("f_TPR", "r604800")),
+                remote_only=bool(li.get("remote_only", False)),
             )
         )
 

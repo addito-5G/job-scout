@@ -32,9 +32,11 @@ def upsert_vacancy(
     session: Session,
     v: VacancyDTO,
     *,
+    profile_id: int,
     search_settings_id: int | None = None,
     profile_role: str | None = None,
-) -> tuple[int, bool]:
+) -> tuple[int, str]:
+    """Вернуть (vacancy_id, outcome): new | skipped | meta_updated."""
     source = normalize_source(v.source)
     external_id = v.external_id
     external_url = v.url or f"{source}:{external_id}"
@@ -63,14 +65,40 @@ def upsert_vacancy(
     tags.extend(extract_tags_from_text(f"{v.title} {desc_full}"))
 
     existing = session.execute(
-        select(Vacancy).where(Vacancy.source == source, Vacancy.external_id == external_id)
+        select(Vacancy).where(
+            Vacancy.profile_id == profile_id,
+            Vacancy.source == source,
+            Vacancy.external_id == external_id,
+        )
     ).scalar_one_or_none()
-    if existing is None and external_url:
-        existing = session.execute(
-            select(Vacancy).where(Vacancy.external_url == external_url)
-        ).scalar_one_or_none()
+
+    incoming_active = getattr(v, "is_active", True)
+    if v.user_status == "archived":
+        incoming_active = False
+
+    if existing:
+        meta_changed = False
+        if v.salary_min is not None and existing.salary_from != v.salary_min:
+            existing.salary_from = v.salary_min
+            meta_changed = True
+        if v.salary_max is not None and existing.salary_to != v.salary_max:
+            existing.salary_to = v.salary_max
+            meta_changed = True
+        if v.salary and existing.salary_text != v.salary:
+            existing.salary_text = v.salary
+            meta_changed = True
+        if existing.is_active != incoming_active:
+            existing.is_active = incoming_active
+            existing.status = "active" if incoming_active else "inactive"
+            meta_changed = True
+        if meta_changed:
+            existing.updated_at = utc_now()
+            session.commit()
+            return existing.id, "meta_updated"
+        return existing.id, "skipped"
 
     fields = {
+        "profile_id": profile_id,
         "external_url": external_url,
         "title": v.title,
         "title_normalized": normalize_title(v.title),
@@ -92,11 +120,9 @@ def upsert_vacancy(
         "experience_required": normalize_experience(v.experience) or None,
         "user_status": v.user_status or "new",
         "status": "active",
-        "is_active": True,
+        "is_active": incoming_active,
         "published_at": published,
-        "enriched_at": enriched,
-        "rule_score": v.score or 0,
-        "rule_score_reasons": "; ".join(v.score_reasons) if v.score_reasons else None,
+        "enriched_at": enriched or (utc_now() if desc_full else None),
         "updated_at": utc_now(),
     }
     if search_settings_id is not None:
@@ -104,20 +130,8 @@ def upsert_vacancy(
     if profile_role is not None:
         fields["profile_role"] = profile_role
 
-    is_new = existing is None
-    if existing:
-        if existing.source != source:
-            existing.source = source
-        if existing.external_id != external_id:
-            existing.external_id = external_id
-        for key, value in fields.items():
-            setattr(existing, key, value)
-        if desc_full:
-            existing.enriched_at = enriched or utc_now()
-        row = existing
-    else:
-        row = Vacancy(source=source, external_id=external_id, scraped_at=utc_now(), **fields)
-        session.add(row)
+    row = Vacancy(source=source, external_id=external_id, scraped_at=utc_now(), **fields)
+    session.add(row)
 
     try:
         session.flush()
@@ -125,26 +139,19 @@ def upsert_vacancy(
         sync_vacancy_tags(session, row.id, tags)
         session.commit()
         session.refresh(row)
-        return row.id, is_new
+        return row.id, "new"
     except IntegrityError:
         session.rollback()
-        by_url = session.execute(
-            select(Vacancy).where(Vacancy.external_url == external_url)
+        existing = session.execute(
+            select(Vacancy).where(
+                Vacancy.profile_id == profile_id,
+                Vacancy.source == source,
+                Vacancy.external_id == external_id,
+            )
         ).scalar_one_or_none()
-        if not by_url:
-            raise
-        for key, value in fields.items():
-            setattr(by_url, key, value)
-        by_url.source = source
-        by_url.external_id = external_id
-        if desc_full:
-            by_url.enriched_at = enriched or utc_now()
-        session.flush()
-        sync_vacancy_skills(session, by_url.id, v.skills)
-        sync_vacancy_tags(session, by_url.id, tags)
-        session.commit()
-        session.refresh(by_url)
-        return by_url.id, False
+        if existing:
+            return existing.id, "skipped"
+        raise
 
 
 def get_vacancy_by_id(session: Session, vacancy_id: int) -> Vacancy | None:
@@ -164,14 +171,17 @@ def count_vacancies(session: Session) -> int:
     return session.execute(select(func.count()).select_from(Vacancy)).scalar_one()
 
 
-def count_new_vacancies(session: Session, days: int) -> int:
+def count_new_vacancies(session: Session, days: int, *, profile_id: int | None = None) -> int:
     """Вакансии, опубликованные или собранные за последние N дней."""
     since = utc_now() - timedelta(days=days)
-    return session.execute(
+    query = (
         select(func.count())
         .select_from(Vacancy)
         .where(or_(Vacancy.published_at >= since, Vacancy.scraped_at >= since))
-    ).scalar_one()
+    )
+    if profile_id is not None:
+        query = query.where(Vacancy.profile_id == profile_id)
+    return session.execute(query).scalar_one()
 
 
 def get_vacancy_skills(session: Session, vacancy_id: int) -> list[str]:
@@ -191,16 +201,15 @@ def get_vacancy_tags(session: Session, vacancy_id: int) -> list[tuple[str, str |
     return [(r[0], r[1]) for r in rows]
 
 
-def list_for_enrichment(session: Session, limit: int = 50, min_score: int = 0) -> list[Vacancy]:
+def list_for_enrichment(session: Session, limit: int = 50) -> list[Vacancy]:
     return list(
         session.execute(
             select(Vacancy)
             .where(
                 or_(Vacancy.description_full.is_(None), Vacancy.description_full == ""),
-                Vacancy.rule_score >= min_score,
                 Vacancy.is_active.is_(True),
             )
-            .order_by(Vacancy.rule_score.desc(), Vacancy.updated_at.desc())
+            .order_by(Vacancy.published_at.desc().nullslast(), Vacancy.updated_at.desc())
             .limit(limit)
         ).scalars()
     )
@@ -210,27 +219,58 @@ def list_for_matching(
     session: Session,
     profile_id: int,
     *,
-    match_level: str = "fast",
+    match_level: str = "fit",
     limit: int = 50,
-    min_score: int = 0,
+    priority_vacancy_ids: list[int] | None = None,
 ) -> list[Vacancy]:
     matched_ids = select(VacancyMatch.vacancy_id).where(
         VacancyMatch.profile_id == profile_id,
         VacancyMatch.match_level == match_level,
     )
-    return list(
-        session.execute(
-            select(Vacancy)
-            .where(
-                Vacancy.rule_score >= min_score,
-                Vacancy.is_active.is_(True),
-                Vacancy.user_status != "hidden",
-                not_(Vacancy.id.in_(matched_ids)),
-            )
-            .order_by(Vacancy.rule_score.desc(), Vacancy.published_at.desc())
-            .limit(limit)
-        ).scalars()
+    base_filters = (
+        Vacancy.profile_id == profile_id,
+        Vacancy.is_active.is_(True),
+        Vacancy.user_status != "hidden",
+        not_(Vacancy.id.in_(matched_ids)),
     )
+
+    vacancies: list[Vacancy] = []
+    seen: set[int] = set()
+
+    if priority_vacancy_ids:
+        priority_rows = list(
+            session.execute(
+                select(Vacancy).where(
+                    Vacancy.id.in_(priority_vacancy_ids),
+                    *base_filters,
+                )
+            ).scalars()
+        )
+        by_id = {row.id: row for row in priority_rows}
+        for vacancy_id in priority_vacancy_ids:
+            row = by_id.get(vacancy_id)
+            if row is None or row.id in seen:
+                continue
+            vacancies.append(row)
+            seen.add(row.id)
+            if len(vacancies) >= limit:
+                return vacancies
+
+    remaining = limit - len(vacancies)
+    if remaining <= 0:
+        return vacancies
+
+    extra_query = (
+        select(Vacancy)
+        .where(*base_filters)
+        .order_by(Vacancy.published_at.desc().nullslast(), Vacancy.updated_at.desc())
+        .limit(remaining)
+    )
+    if seen:
+        extra_query = extra_query.where(not_(Vacancy.id.in_(seen)))
+
+    vacancies.extend(session.execute(extra_query).scalars())
+    return vacancies
 
 
 def apply_enrichment(session: Session, vacancy: Vacancy, detail: dict) -> Vacancy:
@@ -256,5 +296,5 @@ def apply_enrichment(session: Session, vacancy: Vacancy, detail: dict) -> Vacanc
         user_status=vacancy.user_status,
         enriched_at=utc_now(),
     )
-    upsert_vacancy(session, dto)
+    upsert_vacancy(session, dto, profile_id=row.profile_id)
     return get_vacancy_by_id(session, vacancy.id) or vacancy

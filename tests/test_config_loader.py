@@ -5,10 +5,10 @@ from __future__ import annotations
 from config_loader import load_criteria, load_criteria_with_browser, load_sources
 
 
-def test_load_criteria_has_must_match():
+def test_load_criteria_has_profile():
     data = load_criteria()
-    assert "must_match" in data
-    assert isinstance(data["must_match"], list)
+    assert "profile" in data
+    assert data["profile"].get("title")
 
 
 def test_load_sources_has_browser_key():
@@ -19,4 +19,4 @@ def test_load_sources_has_browser_key():
 def test_load_criteria_with_browser_merges_browser():
     data = load_criteria_with_browser()
     assert "browser" in data
-    assert "must_match" in data
+    assert "profile" in data

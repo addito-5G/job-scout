@@ -5,31 +5,43 @@ from __future__ import annotations
 
 import argparse
 
-
-from config_loader import load_criteria
 from db import get_session, init_db
+from db.repositories.match_repo import get_match
 from db.repositories.vacancy_repo import get_vacancy_by_id, get_vacancy_skills
 from services.cover_letter_service import generate_cover_letter
 from services.profile_service import get_latest_profile
 from services.vacancy_service import list_for_review, update_vacancy_status
 
 
+def _fit_score(session, vacancy_id: int, profile_id: int | None) -> int | None:
+    if not profile_id:
+        return None
+    for level in ("fit", "deep", "fast"):
+        row = get_match(session, vacancy_id, profile_id, level)
+        if row and row.match_score is not None:
+            return int(row.match_score)
+    return None
+
+
 def cmd_list(args: argparse.Namespace) -> None:
-    criteria = load_criteria()
-    priority = criteria.get("thresholds", {}).get("priority_score", 70)
     session = get_session()
-    rows = list_for_review(session, min_score=args.min_score, status=args.status, limit=args.limit)
+    profile = get_latest_profile(session)
+    rows = list_for_review(session, status=args.status, limit=args.limit)
     session.close()
 
     if not rows:
         print("Очередь пуста. Запустите: python scripts/scan.py")
         return
 
-    print(f"{'ID':>4}  {'Sc':>3}  {'St':8}  Заголовок")
+    print(f"{'ID':>4}  {'Fit':>3}  {'St':8}  Заголовок")
     print("-" * 72)
     for r in rows:
-        mark = "★" if r.rule_score >= priority else " "
-        print(f"{mark}{r.id:>3}  {r.rule_score:>3}  {r.user_status:8}  {r.title[:50]}")
+        session = get_session()
+        score = _fit_score(session, r.id, profile.id if profile else None)
+        session.close()
+        mark = "★" if score and score >= 72 else " "
+        score_txt = str(score) if score is not None else "—"
+        print(f"{mark}{r.id:>3}  {score_txt:>3}  {r.user_status:8}  {r.title[:50]}")
         company = r.company_rel.name if r.company_rel else "—"
         print(f"      {company} | {r.external_url}")
 
@@ -37,16 +49,18 @@ def cmd_list(args: argparse.Namespace) -> None:
 def cmd_show(args: argparse.Namespace) -> None:
     session = get_session()
     row = get_vacancy_by_id(session, args.id)
+    profile = get_latest_profile(session)
     if not row:
         session.close()
         print("Не найдено")
         return
     skills = get_vacancy_skills(session, row.id)
+    score = _fit_score(session, row.id, profile.id if profile else None)
     session.close()
 
     print(f"# {row.title}\n")
     print(f"Компания: {row.company_rel.name if row.company_rel else '—'}")
-    print(f"Score: {row.rule_score} ({row.rule_score_reasons})")
+    print(f"Fit score: {score if score is not None else '—'}")
     print(f"URL: {row.external_url}")
     if row.salary_text:
         print(f"ЗП: {row.salary_text}")
@@ -94,7 +108,6 @@ def main() -> None:
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     p_list = sub.add_parser("list", help="Список вакансий")
-    p_list.add_argument("--min-score", type=int, default=55)
     p_list.add_argument("--status", default=None)
     p_list.add_argument("--limit", type=int, default=30)
     p_list.set_defaults(func=cmd_list)

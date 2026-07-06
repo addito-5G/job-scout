@@ -17,6 +17,7 @@ def extract_search_keys(
     session: Session,
     content: str,
     *,
+    display_name: str,
     filename: str = "resume.md",
     progress: ProgressCallback | None = None,
 ) -> tuple[CandidateProfile, dict]:
@@ -26,7 +27,7 @@ def extract_search_keys(
 
     _p(0.1, "Читаем текст резюме...")
     _p(0.25, "AI извлекает должность и навыки (Ollama)...")
-    profile, _ = parse_resume_upload(session, content, filename=filename)
+    profile, _ = parse_resume_upload(session, content, display_name=display_name, filename=filename)
 
     _p(0.6, "Анализируем профиль для рынка РФ...")
     _p(0.8, "Формируем ключи для HH, Habr, Geekjob...")

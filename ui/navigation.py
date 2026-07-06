@@ -13,6 +13,7 @@ SOURCE_META: dict[str, tuple[str, str]] = {
     "hh": ("HeadHunter", "🟥"),
     "habr": ("Habr Career", "🟦"),
     "geekjob": ("Geekjob", "🟩"),
+    "linkedin": ("LinkedIn", "🔗"),
 }
 
 NAV_ITEMS: list[tuple[str, str, str]] = [

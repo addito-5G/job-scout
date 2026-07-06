@@ -24,8 +24,6 @@ def test_cmd_show_loads_skills_before_session_close():
     vacancy.id = 1
     vacancy.title = "PM"
     vacancy.company_rel = None
-    vacancy.rule_score = 50
-    vacancy.rule_score_reasons = "ok"
     vacancy.external_url = "https://example.com"
     vacancy.salary_text = ""
     vacancy.employment = ""

@@ -1,8 +1,8 @@
 # Браузер для обогащения (полное описание вакансий)
 browser:
-  engine: auto          # auto | camoufox | drission | requests
+  engine: requests       # auto | camoufox | drission | requests
   headless: true
-  use_for_scan: true    # DrissionPage для парсинга
+  use_for_scan: true     # открывать карточки вакансий через HTTP (requests)
   delay_seconds: 2
   enrich_limit: 30
 
@@ -43,3 +43,11 @@ sources:
 
   manual:
     enabled: true
+
+  linkedin_parser:
+    enabled: false
+    pages_per_query: 2
+    delay_seconds: 3
+    location: "Russia"
+    f_TPR: r604800
+    remote_only: false

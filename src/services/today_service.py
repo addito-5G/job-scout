@@ -2,21 +2,19 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
-
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from db.models import Company, Vacancy, VacancyMatch
+from db.models import Vacancy, VacancyMatch
 from db.repositories.scan_repo import get_last_scan_run
 from services.dashboard_service import get_metrics
-from services.profile_filter_service import vacancy_scope_condition
+from services.profile_filter_service import vacancy_profile_scope
 from services.vacancy_service import VacancyFilters, list_vacancies
 
 
-def _scope(profile_role: str | None) -> list:
+def _scope(profile_id: int | None) -> list:
     cond = [Vacancy.is_active.is_(True), Vacancy.user_status != "hidden"]
-    scope = vacancy_scope_condition(profile_role)
+    scope = vacancy_profile_scope(profile_id)
     if scope is not None:
         cond.append(scope)
     return cond
@@ -28,33 +26,36 @@ def _greeting_name(full_name: str | None) -> str:
     return full_name.strip().split()[0]
 
 
-def _count_excellent_matches(session: Session, profile_id: int, profile_role: str | None) -> int:
-    fast = VacancyMatch.__table__.alias("fast_today")
-    cond = _scope(profile_role)
+def _count_excellent_matches(session: Session, profile_id: int) -> int:
+    fit = VacancyMatch.__table__.alias("fit_today")
+    legacy = VacancyMatch.__table__.alias("legacy_today")
+    cond = _scope(profile_id)
+    score_expr = func.coalesce(fit.c.match_score, legacy.c.match_score)
     q = (
         select(func.count())
         .select_from(Vacancy)
-        .join(
-            fast,
-            (fast.c.vacancy_id == Vacancy.id)
-            & (fast.c.profile_id == profile_id)
-            & (fast.c.match_level == "fast"),
+        .outerjoin(
+            fit,
+            (fit.c.vacancy_id == Vacancy.id)
+            & (fit.c.profile_id == profile_id)
+            & (fit.c.match_level == "fit"),
         )
-        .where(*cond, fast.c.match_score >= 90)
+        .outerjoin(
+            legacy,
+            (legacy.c.vacancy_id == Vacancy.id)
+            & (legacy.c.profile_id == profile_id)
+            & (legacy.c.match_level.in_(("deep", "fast"))),
+        )
+        .where(*cond, score_expr >= 72)
     )
     return int(session.execute(q).scalar_one())
 
 
-def _top_opportunity(session: Session, profile_id: int, profile_role: str | None) -> dict | None:
+def _top_opportunity(session: Session, profile_id: int) -> dict | None:
     items, _ = list_vacancies(
         session,
         profile_id,
-        VacancyFilters(
-            profile_role=profile_role,
-            min_match_score=70,
-            page=1,
-            per_page=1,
-        ),
+        VacancyFilters(min_match_score=70, page=1, per_page=1),
     )
     if not items:
         return None
@@ -63,7 +64,7 @@ def _top_opportunity(session: Session, profile_id: int, profile_role: str | None
         items2, _ = list_vacancies(
             session,
             profile_id,
-            VacancyFilters(profile_role=profile_role, min_match_score=60, page=1, per_page=5),
+            VacancyFilters(min_match_score=60, page=1, per_page=5),
         )
         for item in items2:
             if item.status not in ("applied", "hidden"):
@@ -80,8 +81,8 @@ def _top_opportunity(session: Session, profile_id: int, profile_role: str | None
     }
 
 
-def _application_counts(session: Session, profile_role: str | None) -> dict[str, int]:
-    cond = _scope(profile_role)
+def _application_counts(session: Session, profile_id: int | None) -> dict[str, int]:
+    cond = _scope(profile_id)
     rows = session.execute(
         select(Vacancy.user_status, func.count()).where(*cond).group_by(Vacancy.user_status)
     ).all()
@@ -92,16 +93,15 @@ def build_today_briefing(
     session: Session,
     profile_id: int | None,
     *,
-    profile_role: str | None = None,
     full_name: str | None = None,
 ) -> dict:
-    metrics = get_metrics(session, profile_id, profile_role=profile_role)
+    metrics = get_metrics(session, profile_id)
     last_scan = get_last_scan_run(session)
     new_since_scan = int(last_scan.new_added or 0) if last_scan else metrics.get("new_7d", 0)
 
-    excellent = _count_excellent_matches(session, profile_id, profile_role) if profile_id else 0
-    top = _top_opportunity(session, profile_id, profile_role) if profile_id else None
-    apps = _application_counts(session, profile_role)
+    excellent = _count_excellent_matches(session, profile_id) if profile_id else 0
+    top = _top_opportunity(session, profile_id) if profile_id else None
+    apps = _application_counts(session, profile_id)
 
     applied = apps.get("applied", 0)
     favorites = apps.get("favorite", 0)

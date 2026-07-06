@@ -16,19 +16,18 @@ from services.vacancy_queries import (
 from services.vacancy_service.types import VacancyFilters, VacancyListItem
 
 
-def count_vacancies_by_source(session: Session, *, profile_role: str | None = None) -> dict[str, int]:
-    rows = session.execute(build_count_by_source_query(profile_role=profile_role)).all()
+def count_vacancies_by_source(session: Session, *, profile_id: int | None = None) -> dict[str, int]:
+    rows = session.execute(build_count_by_source_query(profile_id=profile_id)).all()
     return {row[0]: int(row[1]) for row in rows}
 
 
 def list_for_review(
     session: Session,
     *,
-    min_score: int = 0,
     status: str | None = None,
     limit: int = 50,
 ) -> list[Vacancy]:
-    query = build_review_list_query(min_score=min_score, status=status, limit=limit)
+    query = build_review_list_query(status=status, limit=limit)
     return list(session.execute(query).scalars())
 
 
@@ -72,7 +71,7 @@ def list_vacancies(
     page = max(1, filters.page)
     offset = (page - 1) * filters.per_page
     rows = session.execute(
-        base.order_by(match_score_expr.desc().nullslast(), Vacancy.rule_score.desc(), Vacancy.published_at.desc())
+        base.order_by(match_score_expr.desc().nullslast(), Vacancy.published_at.desc().nullslast())
         .offset(offset)
         .limit(filters.per_page)
     ).all()
@@ -95,7 +94,6 @@ def list_vacancies(
                 recommendation=row[3],
                 status=v.user_status or "new",
                 url=v.external_url,
-                score=v.rule_score or 0,
                 published_at=v.published_at,
                 tags=[t[0] for t in tag_rows],
                 source=v.source,

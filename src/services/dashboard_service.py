@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from collections import Counter
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
@@ -10,28 +10,23 @@ from sqlalchemy.orm import Session
 from db.models import Company, Skill, Vacancy, VacancyMatch, VacancySkill
 from db.normalize import experience_label, work_format_label
 from db.repositories.vacancy_repo import count_new_vacancies
-from services.profile_filter_service import vacancy_scope_condition
+from services.profile_filter_service import vacancy_profile_scope
 from time_utils import utc_now
 
 
-def _scope(profile_role: str | None) -> list:
+def _scope(profile_id: int | None) -> list:
     cond = [Vacancy.is_active.is_(True)]
-    scope = vacancy_scope_condition(profile_role)
+    scope = vacancy_profile_scope(profile_id)
     if scope is not None:
         cond.append(scope)
     return cond
 
 
-def get_metrics(
-    session: Session,
-    profile_id: int | None,
-    *,
-    profile_role: str | None = None,
-) -> dict:
-    scope = _scope(profile_role)
+def get_metrics(session: Session, profile_id: int | None) -> dict:
+    scope = _scope(profile_id)
     total = session.execute(select(func.count()).select_from(Vacancy).where(*scope)).scalar_one()
-    new_7d = count_new_vacancies(session, 7)
-    new_30d = count_new_vacancies(session, 30)
+    new_7d = count_new_vacancies(session, 7, profile_id=profile_id)
+    new_30d = count_new_vacancies(session, 30, profile_id=profile_id)
 
     salaries = [
         mid
@@ -48,7 +43,7 @@ def get_metrics(
         avg_match = session.execute(
             select(func.avg(VacancyMatch.match_score)).where(
                 VacancyMatch.profile_id == profile_id,
-                VacancyMatch.match_level == "fast",
+                VacancyMatch.match_level.in_(("fit", "deep", "fast")),
             )
         ).scalar_one()
         if avg_match is not None:
@@ -70,31 +65,22 @@ def _salary_mid(v: Vacancy) -> int | None:
     return v.salary_from or v.salary_to
 
 
-def work_format_distribution(
-    session: Session,
-    *,
-    profile_role: str | None = None,
-) -> list[tuple[str, int]]:
+def work_format_distribution(session: Session, *, profile_id: int | None = None) -> list[tuple[str, int]]:
     rows = session.execute(
         select(Vacancy.work_format, func.count())
-        .where(*_scope(profile_role))
+        .where(*_scope(profile_id))
         .group_by(Vacancy.work_format)
         .order_by(func.count().desc())
     ).all()
     return [(work_format_label(r[0]) if r[0] else "не указан", r[1]) for r in rows]
 
 
-def top_skills(
-    session: Session,
-    limit: int = 10,
-    *,
-    profile_role: str | None = None,
-) -> list[tuple[str, int]]:
+def top_skills(session: Session, limit: int = 10, *, profile_id: int | None = None) -> list[tuple[str, int]]:
     query = (
         select(Skill.name, func.count())
         .join(VacancySkill, VacancySkill.skill_id == Skill.id)
         .join(Vacancy, Vacancy.id == VacancySkill.vacancy_id)
-        .where(*_scope(profile_role))
+        .where(*_scope(profile_id))
         .group_by(Skill.name)
         .order_by(func.count().desc())
         .limit(limit)
@@ -103,17 +89,12 @@ def top_skills(
     return [(r[0], r[1]) for r in rows]
 
 
-def vacancy_timeline(
-    session: Session,
-    days: int = 30,
-    *,
-    profile_role: str | None = None,
-) -> list[tuple[str, int]]:
+def vacancy_timeline(session: Session, days: int = 30, *, profile_id: int | None = None) -> list[tuple[str, int]]:
     since = utc_now() - timedelta(days=days)
     rows = session.execute(
         select(Vacancy.published_at, Vacancy.scraped_at).where(
             or_(Vacancy.published_at >= since, Vacancy.scraped_at >= since),
-            *_scope(profile_role),
+            *_scope(profile_id),
         )
     ).all()
     counter: Counter = Counter()
@@ -124,14 +105,10 @@ def vacancy_timeline(
     return [(d, counter[d]) for d in sorted(counter.keys())]
 
 
-def source_distribution(
-    session: Session,
-    *,
-    profile_role: str | None = None,
-) -> list[tuple[str, int]]:
+def source_distribution(session: Session, *, profile_id: int | None = None) -> list[tuple[str, int]]:
     rows = session.execute(
         select(Vacancy.source, func.count())
-        .where(*_scope(profile_role))
+        .where(*_scope(profile_id))
         .group_by(Vacancy.source)
         .order_by(func.count().desc())
     ).all()
@@ -139,16 +116,11 @@ def source_distribution(
     return [(labels.get(r[0], r[0]), int(r[1])) for r in rows]
 
 
-def top_companies(
-    session: Session,
-    limit: int = 8,
-    *,
-    profile_role: str | None = None,
-) -> list[tuple[str, int]]:
+def top_companies(session: Session, limit: int = 8, *, profile_id: int | None = None) -> list[tuple[str, int]]:
     rows = session.execute(
         select(Company.name, func.count())
         .join(Vacancy, Vacancy.company_id == Company.id)
-        .where(*_scope(profile_role))
+        .where(*_scope(profile_id))
         .group_by(Company.name)
         .order_by(func.count().desc())
         .limit(limit)
@@ -156,14 +128,10 @@ def top_companies(
     return [(r[0], int(r[1])) for r in rows if r[0]]
 
 
-def experience_distribution(
-    session: Session,
-    *,
-    profile_role: str | None = None,
-) -> list[tuple[str, int]]:
+def experience_distribution(session: Session, *, profile_id: int | None = None) -> list[tuple[str, int]]:
     rows = session.execute(
         select(Vacancy.experience_required, func.count())
-        .where(*_scope(profile_role), Vacancy.experience_required.isnot(None))
+        .where(*_scope(profile_id), Vacancy.experience_required.isnot(None))
         .group_by(Vacancy.experience_required)
     ).all()
     counter: Counter[str] = Counter()
@@ -173,26 +141,15 @@ def experience_distribution(
     return counter.most_common(8)
 
 
-def match_score_buckets(
-    session: Session,
-    profile_id: int | None,
-    *,
-    profile_role: str | None = None,
-) -> dict[str, int]:
+def match_score_buckets(session: Session, profile_id: int | None) -> dict[str, int]:
     if not profile_id:
         return {}
-    query = (
-        select(VacancyMatch.match_score)
-        .join(Vacancy, Vacancy.id == VacancyMatch.vacancy_id)
-        .where(
+    rows = session.execute(
+        select(VacancyMatch.match_score).where(
             VacancyMatch.profile_id == profile_id,
-            VacancyMatch.match_level == "fast",
+            VacancyMatch.match_level.in_(("fit", "deep", "fast")),
         )
-    )
-    scope = vacancy_scope_condition(profile_role)
-    if scope is not None:
-        query = query.where(scope)
-    rows = session.execute(query).scalars().all()
+    ).scalars().all()
     buckets = {"0–39%": 0, "40–59%": 0, "60–79%": 0, "80–100%": 0}
     for score in rows:
         s = float(score or 0)
