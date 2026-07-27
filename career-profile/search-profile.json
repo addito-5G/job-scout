@@ -1,0 +1,407 @@
+{
+  "version": 1,
+  "updated_at": "2026-07-27T10:15:55Z",
+  "profile_status": "complete",
+  "preferred_language": "ru",
+  "automation_profile": "Андрей Накимов - Product Manager/Senior PM/Growth/Head of Product с 15+ годами опыта, сильным data-driven и бизнес-ориентированным профилем. Ключевые доказательства: 0->1 запуск NRP (43% penetration, 1000+ users), churn 14%->7.2%, monetization uplift, unit-экономика и рост маржинальности. Жесткие ограничения: только РФ, без релокации, remote или hybrid в Москве, минимум USD 4000 net (конфиденциально), исключить МФО и чистый delivery без метрик. Английский для интервью - только с переводчиком.",
+  "targets": {
+    "primary_roles": [
+      {
+        "value": "Product Manager",
+        "status": "confirmed",
+        "confidence": "high",
+        "evidence_refs": [
+          "src_resume_ru_md",
+          "src_resume_en_md",
+          "src_resume_long_md"
+        ]
+      },
+      {
+        "value": "Senior Product Manager",
+        "status": "confirmed",
+        "confidence": "high",
+        "evidence_refs": [
+          "src_user_interview_2026_07_27"
+        ]
+      },
+      {
+        "value": "Growth Product Manager",
+        "status": "confirmed",
+        "confidence": "high",
+        "evidence_refs": [
+          "src_user_interview_2026_07_27",
+          "src_resume_long_md"
+        ]
+      },
+      {
+        "value": "Head of Product",
+        "status": "confirmed",
+        "confidence": "medium",
+        "evidence_refs": [
+          "src_user_interview_2026_07_27"
+        ]
+      }
+    ],
+    "adjacent_roles": [],
+    "excluded_roles": [
+      {
+        "value": "Product Analyst as primary role",
+        "status": "preference",
+        "confidence": "high",
+        "evidence_refs": [
+          "src_user_interview_2026_07_27"
+        ]
+      }
+    ],
+    "seniority": [
+      "middle+",
+      "senior",
+      "head"
+    ],
+    "ic_management_preferences": [
+      {
+        "value": "IC and management both acceptable",
+        "status": "confirmed",
+        "confidence": "high",
+        "evidence_refs": [
+          "src_user_interview_2026_07_27"
+        ]
+      }
+    ],
+    "domains": [
+      "B2B SaaS",
+      "Marketplace",
+      "E-commerce",
+      "Product analytics"
+    ],
+    "company_stages": [
+      "any",
+      "startup lower priority"
+    ],
+    "company_sizes": [
+      "any"
+    ]
+  },
+  "constraints": {
+    "locations_allowed": [
+      "Russia"
+    ],
+    "locations_excluded": [],
+    "remote_modes": [
+      "remote",
+      "hybrid_moscow_up_to_1h_commute"
+    ],
+    "time_zones": [
+      "Russian-speaking teams"
+    ],
+    "relocation": false,
+    "travel": true,
+    "work_authorization_summary": "Authorized to work in Russia (from resume source).",
+    "sponsorship_needed": null,
+    "employment_types": [
+      "full-time"
+    ],
+    "earliest_start": "immediately_after_offer",
+    "notice_period": "none_reported",
+    "compensation": {
+      "currency": "USD",
+      "basis": "net",
+      "minimum": 4000,
+      "target": null,
+      "confidential": true
+    },
+    "hard_stops": [
+      "MFO organizations",
+      "pure delivery roles without metric ownership"
+    ]
+  },
+  "preferences": {
+    "ranked": [
+      {
+        "value": "Strong tasks over company formality",
+        "status": "preference",
+        "confidence": "high",
+        "evidence_refs": [
+          "src_user_interview_2026_07_27"
+        ]
+      },
+      {
+        "value": "0->1 product work",
+        "status": "preference",
+        "confidence": "high",
+        "evidence_refs": [
+          "src_user_interview_2026_07_27"
+        ]
+      },
+      {
+        "value": "Monetization and unit economics",
+        "status": "preference",
+        "confidence": "high",
+        "evidence_refs": [
+          "src_user_interview_2026_07_27"
+        ]
+      },
+      {
+        "value": "Analytics-driven product management",
+        "status": "preference",
+        "confidence": "high",
+        "evidence_refs": [
+          "src_resume_ru_md",
+          "src_resume_en_md"
+        ]
+      },
+      {
+        "value": "Scaling existing products",
+        "status": "preference",
+        "confidence": "high",
+        "evidence_refs": [
+          "src_user_interview_2026_07_27"
+        ]
+      }
+    ],
+    "tradeoffs": [
+      {
+        "value": "Startup opportunities are acceptable if task is strong, but lower priority",
+        "status": "preference",
+        "confidence": "high",
+        "evidence_refs": [
+          "src_user_interview_2026_07_27"
+        ]
+      }
+    ],
+    "search_expansion_rules": [
+      "If match volume is low, expand by adjacent domains before changing hard stops or compensation floor."
+    ],
+    "work_style": [
+      "data-driven",
+      "business impact ownership",
+      "metric accountability"
+    ],
+    "manager_team_culture": []
+  },
+  "capabilities": [
+    {
+      "value": "Product discovery and strategy",
+      "status": "confirmed",
+      "confidence": "high",
+      "evidence_refs": [
+        "src_resume_ru_md",
+        "src_resume_en_md"
+      ]
+    },
+    {
+      "value": "Unit economics and P&L ownership",
+      "status": "confirmed",
+      "confidence": "high",
+      "evidence_refs": [
+        "src_resume_long_md"
+      ]
+    },
+    {
+      "value": "SQL, Python, ClickHouse for product analytics",
+      "status": "confirmed",
+      "confidence": "high",
+      "evidence_refs": [
+        "src_resume_ru_md",
+        "src_resume_en_md"
+      ]
+    },
+    {
+      "value": "People management (3 analysts)",
+      "status": "confirmed",
+      "confidence": "high",
+      "evidence_refs": [
+        "src_resume_long_md"
+      ]
+    }
+  ],
+  "achievements": [
+    {
+      "value": "NRP launch from 0->1 to 43% penetration and 1000+ active users",
+      "status": "confirmed",
+      "confidence": "high",
+      "evidence_refs": [
+        "src_resume_ru_md",
+        "src_resume_en_md"
+      ]
+    },
+    {
+      "value": "Churn reduction from 14% to 7.2%",
+      "status": "confirmed",
+      "confidence": "high",
+      "evidence_refs": [
+        "src_resume_ru_md",
+        "src_resume_en_md"
+      ]
+    },
+    {
+      "value": "Gross margin turnaround from -6% to 10-15% in 3 months",
+      "status": "confirmed",
+      "confidence": "high",
+      "evidence_refs": [
+        "src_resume_ru_md",
+        "src_resume_en_md"
+      ]
+    }
+  ],
+  "languages": [
+    {
+      "value": "Russian",
+      "status": "confirmed",
+      "confidence": "high",
+      "evidence_refs": [
+        "src_user_interview_2026_07_27"
+      ],
+      "details": {
+        "speaking": "native",
+        "listening": "native",
+        "reading": "native",
+        "writing": "native"
+      }
+    },
+    {
+      "value": "English",
+      "status": "confirmed",
+      "confidence": "high",
+      "evidence_refs": [
+        "src_user_interview_2026_07_27"
+      ],
+      "details": {
+        "speaking": "requires translator",
+        "listening": "requires translator for high confidence",
+        "reading": "technical docs readable, often translated",
+        "writing": "unknown"
+      }
+    }
+  ],
+  "career_history": [
+    {
+      "value": "Indeepa - Product Manager (Nov 2024 to Jun 2026, Moscow)",
+      "status": "confirmed",
+      "confidence": "high",
+      "evidence_refs": [
+        "src_resume_ru_md",
+        "src_resume_en_md",
+        "src_resume_long_md"
+      ]
+    },
+    {
+      "value": "E-commerce and marketplace projects - Product/Growth/Head of E-com (Mar 2022 to Oct 2024, Moscow)",
+      "status": "confirmed",
+      "confidence": "high",
+      "evidence_refs": [
+        "src_resume_ru_md",
+        "src_resume_en_md",
+        "src_resume_long_md"
+      ]
+    },
+    {
+      "value": "IT/CRM and customer operations leadership (May 2019 to Feb 2022, Moscow)",
+      "status": "confirmed",
+      "confidence": "high",
+      "evidence_refs": [
+        "src_resume_ru_md",
+        "src_resume_long_md"
+      ]
+    },
+    {
+      "value": "Regional management and franchise development (Feb 2011 to Jan 2019, Moscow)",
+      "status": "confirmed",
+      "confidence": "high",
+      "evidence_refs": [
+        "src_resume_ru_md",
+        "src_resume_long_md"
+      ]
+    }
+  ],
+  "evidence_sources": [
+    {
+      "ref": "src_resume_en_md",
+      "path_or_url": "/Users/andrey_nakimov/Downloads/Мои новые резюме/Andrey_Nakimov_CV_EN.md",
+      "type": "resume_markdown",
+      "access": "accessible"
+    },
+    {
+      "ref": "src_resume_ru_md",
+      "path_or_url": "/Users/andrey_nakimov/Downloads/Мои новые резюме/Andrey_Nakimov_CV_RU.md",
+      "type": "resume_markdown",
+      "access": "accessible"
+    },
+    {
+      "ref": "src_resume_long_md",
+      "path_or_url": "/Users/andrey_nakimov/Projects/job-scout/data/resumes/продакт_менеджер_pasted_resume.md",
+      "type": "resume_long_form",
+      "access": "accessible"
+    },
+    {
+      "ref": "src_github_profile",
+      "path_or_url": "https://github.com/addito-5G",
+      "type": "public_profile",
+      "access": "accessible"
+    },
+    {
+      "ref": "src_linkedin_profile",
+      "path_or_url": "https://linkedin.com/in/addito",
+      "type": "public_profile",
+      "access": "inaccessible_at_interview_time"
+    },
+    {
+      "ref": "src_user_interview_2026_07_27",
+      "path_or_url": "chat_interview_local_2026-07-27",
+      "type": "interview",
+      "access": "accessible"
+    }
+  ],
+  "risks_and_gaps": [
+    {
+      "value": "LinkedIn source was inaccessible at extraction time",
+      "status": "confirmed",
+      "confidence": "high",
+      "evidence_refs": [
+        "src_linkedin_profile"
+      ]
+    },
+    {
+      "value": "English spoken interview readiness is limited",
+      "status": "confirmed",
+      "confidence": "high",
+      "evidence_refs": [
+        "src_user_interview_2026_07_27"
+      ]
+    }
+  ],
+  "unknowns": [
+    {
+      "value": "No strict weighted priority across target roles",
+      "status": "unknown",
+      "confidence": "medium",
+      "evidence_refs": [
+        "src_user_interview_2026_07_27"
+      ]
+    },
+    {
+      "value": "English writing level for external communication without translation support",
+      "status": "unknown",
+      "confidence": "medium",
+      "evidence_refs": [
+        "src_user_interview_2026_07_27"
+      ]
+    }
+  ],
+  "privacy_exclusions": [
+    "Do not disclose compensation floor publicly.",
+    "Do not send personal data to third parties without explicit approval."
+  ],
+  "automation_policy": {
+    "may_search": true,
+    "may_rank": true,
+    "may_draft": true,
+    "may_contact": false,
+    "may_apply": false,
+    "requires_explicit_approval": [
+      "sending messages",
+      "submitting applications",
+      "sharing personal data"
+    ]
+  }
+}
