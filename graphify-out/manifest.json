@@ -30,8 +30,8 @@
     "semantic_hash": ""
   },
   "pyproject.toml": {
-    "mtime": 1783088828.4921298,
-    "ast_hash": "38bd3fb567fc764b2219ffdcf1f35c2b",
+    "mtime": 1785666739.8504078,
+    "ast_hash": "738fd1f306256cb7efeb0970384c86bc",
     "semantic_hash": ""
   },
   "scripts/benchmark_fetchers.py": {
@@ -875,7 +875,7 @@
     "semantic_hash": ""
   },
   "automation/03-daily-job-radar.ru.md": {
-    "mtime": 1785666410.6153152,
+    "mtime": 1785666739.4159336,
     "ast_hash": "707212a5ac47b2bde30f19bfe1a713cb",
     "semantic_hash": ""
   },
@@ -900,8 +900,8 @@
     "semantic_hash": ""
   },
   "requirements.txt": {
-    "mtime": 1785666231.8552148,
-    "ast_hash": "7c2ba98d1f6a298506e119a2f3322cb8",
+    "mtime": 1785666739.8504138,
+    "ast_hash": "8bdac1a1d5202cf18b72fa39f697f878",
     "semantic_hash": ""
   },
   "tests/fixtures/linkedin/job_page.jsonld.html": {
@@ -932,6 +932,51 @@
   "docs/images/vacancy-match-letter.png": {
     "mtime": 1783086290.819057,
     "ast_hash": "0c2baadf4e82a45a8cd03416b2954339",
+    "semantic_hash": ""
+  },
+  ".agents/skills/graphify/SKILL.md": {
+    "mtime": 1785666728.6333828,
+    "ast_hash": "4388891114e3af2d60510a23f3dd8069",
+    "semantic_hash": ""
+  },
+  ".agents/skills/graphify/references/add-watch.md": {
+    "mtime": 1785666724.0653713,
+    "ast_hash": "d59d027fe449f06aa03905a01184e779",
+    "semantic_hash": ""
+  },
+  ".agents/skills/graphify/references/exports.md": {
+    "mtime": 1785666724.065452,
+    "ast_hash": "9da2a2152e60a22f07f05fed5158f287",
+    "semantic_hash": ""
+  },
+  ".agents/skills/graphify/references/extraction-spec.md": {
+    "mtime": 1785666724.0656142,
+    "ast_hash": "42fef56a01698118f7fd722acdadea34",
+    "semantic_hash": ""
+  },
+  ".agents/skills/graphify/references/github-and-merge.md": {
+    "mtime": 1785666724.0657067,
+    "ast_hash": "cde13df085e4c492aeb7ba298a996d0d",
+    "semantic_hash": ""
+  },
+  ".agents/skills/graphify/references/hooks.md": {
+    "mtime": 1785666724.065789,
+    "ast_hash": "aea24fe86e18fe8aeb304403032cfce7",
+    "semantic_hash": ""
+  },
+  ".agents/skills/graphify/references/query.md": {
+    "mtime": 1785666724.0659208,
+    "ast_hash": "3c46f8ad006874260614ed8657d02307",
+    "semantic_hash": ""
+  },
+  ".agents/skills/graphify/references/transcribe.md": {
+    "mtime": 1785666724.0659947,
+    "ast_hash": "67b6a5fa6c0974e18f60db9f8932fbd8",
+    "semantic_hash": ""
+  },
+  ".agents/skills/graphify/references/update.md": {
+    "mtime": 1785666724.0661042,
+    "ast_hash": "9378bd03d56baaf78bd738ab3848f142",
     "semantic_hash": ""
   }
 }
