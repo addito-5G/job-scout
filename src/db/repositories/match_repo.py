@@ -54,6 +54,28 @@ def upsert_match(
     return row
 
 
+def save_fit_advice(
+    session: Session,
+    vacancy_id: int,
+    profile_id: int,
+    advice: dict,
+    *,
+    match_level: str = "fit",
+) -> None:
+    row = get_match(session, vacancy_id, profile_id, match_level)
+    if not row:
+        row = VacancyMatch(
+            vacancy_id=vacancy_id,
+            profile_id=profile_id,
+            match_level=match_level,
+            match_score=0.0,
+            recommendation="improve_resume",
+        )
+        session.add(row)
+    row.fit_advice_json = json.dumps(advice, ensure_ascii=False)
+    session.commit()
+
+
 def get_match(
     session: Session,
     vacancy_id: int,

@@ -25,6 +25,15 @@ def match_to_dict(row: VacancyMatch | None) -> dict | None:
     missing = loads(row.missing_skills_json)
     gaps = [f"Усилить в резюме и опыте: {item}" for item in missing[:6]]
 
+    ai_fit_advice = None
+    if row.fit_advice_json:
+        try:
+            parsed = json.loads(row.fit_advice_json)
+            if isinstance(parsed, dict):
+                ai_fit_advice = parsed
+        except json.JSONDecodeError:
+            pass
+
     return {
         "match_score": int(row.match_score or 0),
         "match_summary": row.recommendation_reason or (row.ai_analysis or "")[:500],
@@ -35,6 +44,7 @@ def match_to_dict(row: VacancyMatch | None) -> dict | None:
         "risks": loads(row.risks_json),
         "recommendation": row.recommendation,
         "cover_letter_draft": row.cover_letter_draft,
+        "ai_fit_advice": ai_fit_advice,
     }
 
 

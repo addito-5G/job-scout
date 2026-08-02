@@ -120,6 +120,22 @@ def _build_improve_resume(payload: dict[str, Any]) -> tuple[str, str | None]:
     )
 
 
+def _build_vacancy_fit_advice(payload: dict[str, Any]) -> tuple[str, str | None]:
+    from ai.prompts.vacancy_fit_advice import VACANCY_FIT_ADVICE_PROMPT, VACANCY_FIT_ADVICE_SYSTEM
+
+    return (
+        VACANCY_FIT_ADVICE_PROMPT.format(
+            candidate_name=payload.get("candidate_name", "Кандидат"),
+            target_role=payload.get("target_role", "специалист"),
+            resume_excerpt=payload.get("resume_excerpt", ""),
+            profile_json=payload.get("profile_json", "{}"),
+            vacancy_json=payload.get("vacancy_json", "{}"),
+            fit_context_json=payload.get("fit_context_json", "{}"),
+        ),
+        VACANCY_FIT_ADVICE_SYSTEM,
+    )
+
+
 TASK_PROMPT_BUILDERS: dict[str, PromptBuilder] = {
     "parse_resume": _build_parse_resume,
     "analyze_resume_ru": _build_analyze_resume_ru,
@@ -127,6 +143,7 @@ TASK_PROMPT_BUILDERS: dict[str, PromptBuilder] = {
     "generate_cover_letter": _build_cover_letter,
     "generate_linkedin_outreach": _build_linkedin_outreach,
     "improve_resume": _build_improve_resume,
+    "vacancy_fit_advice": _build_vacancy_fit_advice,
     "company_brief": _build_company_brief,
 }
 

@@ -3,25 +3,13 @@
 
 from __future__ import annotations
 
+import os
+
 import streamlit as st
 
-from db import session_scope
-from services.profile_service import get_active_profile
-from services.search_service import get_active_search_settings
-from ui.applications_page import render_applications
-from ui.brand import PRODUCT_NAME, PRODUCT_TAGLINE
+from ui.brand import PRODUCT_NAME
 from ui.design_system import inject_design_system
-from ui.detail_page import render_detail
-from ui.extract_progress import run_extract_with_progress
-from ui.market_insights_page import render_market_insights
-from ui.navigation import render_app_sidebar, render_setup_sidebar
-from ui.onboarding_page import render_onboarding
-from ui.opportunities_page import render_opportunities
-from ui.parse_progress import run_parse_with_progress
-from ui.parse_setup_page import render_keywords_step
-from ui.resume_advice_page import render_resume_advice
-from ui.today_page import render_today
-from ui.workflow import render_stepper, resolve_initial_stage
+from ui.public_stub import render_public_stub
 
 
 st.set_page_config(
@@ -34,7 +22,23 @@ st.set_page_config(
 inject_design_system()
 
 
+def _force_public_stub() -> bool:
+    flag = os.getenv("NEXTMOVE_PUBLIC_STUB", "").strip().lower()
+    if flag in ("1", "true", "yes"):
+        return True
+    # Streamlit Community Cloud
+    if os.getenv("STREAMLIT_RUNTIME_ENVIRONMENT", "").lower() == "cloud":
+        return True
+    if os.path.isdir("/mount/src"):
+        return True
+    return False
+
+
 def _bootstrap() -> tuple[bool, bool]:
+    from db import session_scope
+    from services.profile_service import get_active_profile
+    from services.search_service import get_active_search_settings
+
     with session_scope() as session:
         profile = get_active_profile(session)
         has_resume = bool(profile and profile.resume_raw)
@@ -45,6 +49,23 @@ def _bootstrap() -> tuple[bool, bool]:
 
 
 def main() -> None:
+    if _force_public_stub():
+        render_public_stub()
+        return
+
+    from ui.applications_page import render_applications
+    from ui.detail_page import render_detail
+    from ui.extract_progress import run_extract_with_progress
+    from ui.market_insights_page import render_market_insights
+    from ui.navigation import render_app_sidebar, render_setup_sidebar
+    from ui.onboarding_page import render_onboarding
+    from ui.opportunities_page import render_opportunities
+    from ui.parse_progress import run_parse_with_progress
+    from ui.parse_setup_page import render_keywords_step
+    from ui.resume_advice_page import render_resume_advice
+    from ui.today_page import render_today
+    from ui.workflow import render_stepper, resolve_initial_stage
+
     st.session_state.setdefault("view", "today")
     st.session_state.setdefault("selected_source", "hh")
 
@@ -58,7 +79,13 @@ def main() -> None:
         except ValueError:
             pass
 
-    has_resume, has_settings = _bootstrap()
+    try:
+        has_resume, has_settings = _bootstrap()
+    except Exception as exc:
+        # Cloud / broken DB: show landing instead of red traceback
+        render_public_stub(error=f"{type(exc).__name__}: {exc}")
+        return
+
     stage = resolve_initial_stage(has_resume=has_resume, has_settings=has_settings)
 
     if st.session_state.get("extract_running"):

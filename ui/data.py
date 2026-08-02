@@ -166,7 +166,6 @@ def cached_opportunity_list(
                 "recommendation": i.recommendation,
                 "status": i.status,
                 "url": i.url,
-                "score": i.score,
                 "tags": i.tags,
                 "source": i.source,
             }

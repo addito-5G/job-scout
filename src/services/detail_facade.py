@@ -7,6 +7,7 @@ from db.repositories.vacancy_repo import get_vacancy_by_id
 from services.cover_letter_service import generate_cover_letter, normalize_cover_letter
 from services.linkedin_outreach_service import generate_linkedin_outreach, linkedin_people_search_url
 from services.match_service import compute_fit_match
+from services.vacancy_fit_advice_service import generate_vacancy_fit_advice
 from services.vacancy_service import VacancyDetail, get_vacancy_detail
 from sqlalchemy.orm import Session
 
@@ -35,6 +36,16 @@ def best_match(detail: VacancyDetail) -> dict | None:
 
 def refresh_fit_match(session: Session, profile: CandidateProfile, vacancy: Vacancy) -> dict:
     return compute_fit_match(session, profile, vacancy)
+
+
+def generate_fit_advice(
+    session: Session,
+    profile: CandidateProfile,
+    vacancy: Vacancy,
+    *,
+    use_cache: bool = False,
+) -> dict:
+    return generate_vacancy_fit_advice(session, profile, vacancy, use_cache=use_cache)
 
 
 def generate_letter(

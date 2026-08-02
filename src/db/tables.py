@@ -267,6 +267,7 @@ class VacancyMatch(Base):
     recommendation_reason: Mapped[str | None] = mapped_column(Text)
     ai_analysis: Mapped[str | None] = mapped_column(Text)
     cover_letter_draft: Mapped[str | None] = mapped_column(Text)
+    fit_advice_json: Mapped[str | None] = mapped_column(Text)
     provider: Mapped[str | None] = mapped_column(String(32))
     tokens_used: Mapped[int | None] = mapped_column(Integer)
     analyzed_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)

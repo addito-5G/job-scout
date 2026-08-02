@@ -13,6 +13,7 @@ TASK_ROUTING: dict[str, str] = {
     "improve_resume": "yandex",
     "generate_cover_letter": "yandex",
     "generate_linkedin_outreach": "yandex",
+    "vacancy_fit_advice": "groq",
     "suggest_filters": "ollama",
     "company_brief": "yandex",
 }
@@ -30,6 +31,7 @@ CACHE_TTL_DAYS: dict[str, int] = {
     "extract_skills": 30,
     "extract_skills_ru": 30,
     "improve_resume": 7,
+    "vacancy_fit_advice": 14,
     "company_brief": 30,
     "default": 30,
 }

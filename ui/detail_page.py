@@ -10,6 +10,7 @@ from ai.ai_router import AIRouterError
 from db import session_scope
 from services.detail_facade import (
     best_match,
+    generate_fit_advice,
     generate_letter,
     generate_outreach,
     load_detail,
@@ -25,6 +26,72 @@ from ai.prompts.linkedin_outreach import CONTACT_ROLE_UI_LABELS
 from ui.constants import recommendation_label
 from ui.data import cached_profile_id, clear_data_cache
 from ui.navigation import source_label
+
+
+_READINESS_LABELS = {
+    "strong": ("Сильное соответствие", "nm-badge"),
+    "moderate": ("Можно откликаться", "nm-badge"),
+    "stretch": ("Натяжка — готовьте аргументы", "nm-badge"),
+}
+
+_EFFORT_LABELS = {
+    "quick": "⚡ быстро",
+    "medium": "📅 на неделю",
+    "long": "🎯 на месяц+",
+}
+
+
+def _render_ai_fit_advice(advice: dict) -> None:
+    readiness = advice.get("fit_readiness") or "moderate"
+    label, badge_cls = _READINESS_LABELS.get(readiness, _READINESS_LABELS["moderate"])
+    provider = advice.get("provider") or "AI"
+
+    st.markdown(
+        f'<div class="nm-card" style="margin-top:0.75rem">'
+        f'<span class="{badge_cls}">{label}</span> '
+        f'<span class="nm-badge">{provider}</span></div>',
+        unsafe_allow_html=True,
+    )
+
+    verdict = advice.get("verdict") or ""
+    if verdict:
+        st.markdown(verdict)
+
+    priority = (advice.get("priority_action") or "").strip()
+    if priority:
+        st.info(f"**Сегодня:** {priority}")
+
+    additions = advice.get("resume_additions") or []
+    if additions:
+        st.markdown("**Что добавить в резюме**")
+        for item in additions:
+            effort = _EFFORT_LABELS.get(item.get("effort"), "")
+            title = item.get("item", "")
+            why = item.get("why", "")
+            line = f"• **{title}**"
+            if effort:
+                line += f" · {effort}"
+            st.markdown(line)
+            if why:
+                st.caption(why)
+
+    bullets = advice.get("resume_bullets") or []
+    if bullets:
+        st.markdown("**Готовые формулировки для опыта**")
+        for bullet in bullets:
+            st.markdown(f"> {bullet}")
+
+    talking = advice.get("interview_talking_points") or []
+    if talking:
+        st.markdown("**На собеседовании**")
+        for point in talking:
+            st.caption(f"• {point}")
+
+    gaps = advice.get("honest_gaps") or []
+    if gaps:
+        st.markdown("**Как честно закрыть пробелы**")
+        for gap in gaps:
+            st.caption(f"• {gap}")
 
 
 def _render_match_analysis(
@@ -108,14 +175,37 @@ def _render_match_analysis(
         st.markdown("**Риски**")
         skill_badges(risks, kind="missing")
 
+    advice = match.get("ai_fit_advice")
+    if advice:
+        st.markdown(
+            '<div class="nm-section-label" style="margin-top:1rem">Рекомендация AI</div>',
+            unsafe_allow_html=True,
+        )
+        _render_ai_fit_advice(advice)
+
     if profile and vacancy_orm:
-        if st.button("🔄 Пересчитать соответствие", key=f"refresh_fit_{vacancy_id}"):
-            try:
-                refresh_fit_match(session, profile, vacancy_orm)
-                clear_data_cache()
-                st.rerun()
-            except Exception as exc:
-                st.warning(str(exc))
+        col_ai, col_hint = st.columns([1, 2])
+        with col_ai:
+            if st.button(
+                "✨ Рекомендация AI",
+                key=f"ai_fit_advice_{vacancy_id}",
+                help="Groq анализирует резюме под эту вакансию: что усилить, готовые формулировки, аргументы на интервью",
+            ):
+                try:
+                    with st.spinner("AI готовит рекомендации под вакансию…"):
+                        generate_fit_advice(session, profile, vacancy_orm, use_cache=False)
+                    clear_data_cache()
+                    st.toast("Рекомендации сохранены", icon="✅")
+                    st.rerun()
+                except AIRouterError as exc:
+                    st.warning(f"AI недоступен: {exc}")
+                except Exception as exc:
+                    st.warning(str(exc))
+        with col_hint:
+            st.caption(
+                "Персональный план: что дописать в резюме, готовые буллеты из вашего опыта "
+                "и как ответить на вопросы о пробелах. Fit Score остаётся автоматическим."
+            )
 
 
 def render_detail(vacancy_id: int) -> None:
