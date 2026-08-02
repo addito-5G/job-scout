@@ -36,6 +36,7 @@ def build_adapters(
                 queries=queries,
                 pages_per_query=int(hh.get("pages_per_query", 2)),
                 delay_seconds=float(hh.get("delay_seconds", 2)),
+                search_period=int(hh.get("search_period", 7)),
                 fetcher=fetcher,
             )
         )

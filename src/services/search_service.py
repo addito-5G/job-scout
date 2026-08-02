@@ -181,7 +181,7 @@ def settings_to_queries_from_data(data: dict) -> list[dict]:
         return []
     queries = []
     for title in titles[:3]:
-        q = {"text": title, "area": 1, "search_field": "name"}
+        q = {"text": title, "area": 1, "search_field": "name", "search_period": 7}
         formats = data.get("work_formats") or []
         if "remote" in formats:
             q["schedule"] = "remote"

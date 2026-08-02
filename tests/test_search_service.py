@@ -37,3 +37,4 @@ def test_settings_to_queries_from_profile_titles():
     )
     assert queries[0]["text"] == "Backend Developer"
     assert queries[0]["schedule"] == "remote"
+    assert queries[0]["search_period"] == 7
