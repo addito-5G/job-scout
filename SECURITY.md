@@ -30,4 +30,4 @@ gh auth login
 
 ## Responsible use
 
-Job Scout is a personal pet project. Respect the terms of service of job boards (hh.ru, Habr Career, Geekjob). Use reasonable request rates; the project is not intended for commercial scraping at scale.
+Job Scout is a personal pet project. Respect the terms of service of job boards (hh.ru). Use reasonable request rates; the project is not intended for commercial scraping at scale.

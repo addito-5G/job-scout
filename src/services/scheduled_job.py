@@ -96,8 +96,6 @@ def run_scheduled_update(
         result.errors.extend(scan.errors)
 
         hh_found = int(scan.by_source.get("hh_parser", 0) + scan.by_source.get("hh", 0))
-        habr_found = int(scan.by_source.get("habr", 0))
-        geekjob_found = int(scan.by_source.get("geekjob", 0))
 
         finish_scan_run(
             session,
@@ -109,8 +107,8 @@ def run_scheduled_update(
             error_log="; ".join(result.errors[:10]),
             status="completed" if not result.errors else "completed_with_errors",
             hh_found=hh_found,
-            habr_found=habr_found,
-            geekjob_found=geekjob_found,
+            habr_found=0,
+            geekjob_found=0,
         )
         _progress(1.0, "Готово", None)
         return result

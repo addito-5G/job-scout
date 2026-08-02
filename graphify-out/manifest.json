@@ -85,18 +85,8 @@
     "semantic_hash": ""
   },
   "src/adapters/base.py": {
-    "mtime": 1785664477.2415354,
-    "ast_hash": "8ed82d8a8701bf0aadefbef130c34b17",
-    "semantic_hash": ""
-  },
-  "src/adapters/geekjob_parser.py": {
-    "mtime": 1782842491.728658,
-    "ast_hash": "858873b142957378f5c08730f16ddc36",
-    "semantic_hash": ""
-  },
-  "src/adapters/habr_parser.py": {
-    "mtime": 1782839055.072179,
-    "ast_hash": "edc78e6dc234fdc2ff3642500a5e4c71",
+    "mtime": 1785667565.223232,
+    "ast_hash": "ce0111612b70604757beaafb89d1aa5e",
     "semantic_hash": ""
   },
   "src/adapters/hh_parser.py": {
@@ -104,14 +94,9 @@
     "ast_hash": "6f3e3af6ad8fdcd42529afff47d143b4",
     "semantic_hash": ""
   },
-  "src/adapters/linkedin_parser.py": {
-    "mtime": 1783344409.9611156,
-    "ast_hash": "7904facb29cffe1d3eef5b50175ce2aa",
-    "semantic_hash": ""
-  },
   "src/adapters/registry.py": {
-    "mtime": 1783344409.9656253,
-    "ast_hash": "8bce8d1c569bbbe0905731c7c79b41da",
+    "mtime": 1785667567.6875134,
+    "ast_hash": "6b9fc227fc6788c59708b84adb53660b",
     "semantic_hash": ""
   },
   "src/ai/__init__.py": {
@@ -135,18 +120,13 @@
     "semantic_hash": ""
   },
   "src/ai/prompts/cover_letter.py": {
-    "mtime": 1783344409.9612741,
-    "ast_hash": "644783bca9a781215364f86db2d0cdd5",
+    "mtime": 1785667664.3246992,
+    "ast_hash": "d0c69cc94144911b99ec3171735abc3a",
     "semantic_hash": ""
   },
   "src/ai/prompts/improve_resume.py": {
-    "mtime": 1783344409.9657707,
-    "ast_hash": "55da31cce726aac2ca39175e6a544a1c",
-    "semantic_hash": ""
-  },
-  "src/ai/prompts/linkedin_outreach.py": {
-    "mtime": 1783344409.9531407,
-    "ast_hash": "6aa500c77190e1c6967c5265557e1be2",
+    "mtime": 1785667677.0557497,
+    "ast_hash": "e7fb41ea023fa924d977fb97871d7091",
     "semantic_hash": ""
   },
   "src/ai/prompts/parse_resume.py": {
@@ -160,8 +140,8 @@
     "semantic_hash": ""
   },
   "src/ai/prompts/vacancy_fit_advice.py": {
-    "mtime": 1785664741.2822301,
-    "ast_hash": "37eb07231925788a6a9277049e8bb2d9",
+    "mtime": 1785667674.7114823,
+    "ast_hash": "2cb0af3f74308797368e6c4763956468",
     "semantic_hash": ""
   },
   "src/ai/providers/__init__.py": {
@@ -190,8 +170,8 @@
     "semantic_hash": ""
   },
   "src/ai/routing.py": {
-    "mtime": 1785667127.2921128,
-    "ast_hash": "641e50b571fec5b7ebecd75858961ca9",
+    "mtime": 1785667661.7204804,
+    "ast_hash": "96e82f561afe1676e3842bb7e6eede95",
     "semantic_hash": ""
   },
   "src/ai/schemas/profile.py": {
@@ -205,8 +185,8 @@
     "semantic_hash": ""
   },
   "src/ai/task_prompts.py": {
-    "mtime": 1785664741.3003666,
-    "ast_hash": "30ab652975ba4308d787237e2956e827",
+    "mtime": 1785667664.2937136,
+    "ast_hash": "28ed2bb0c0045c4c54e0fd1d8f1ef351",
     "semantic_hash": ""
   },
   "src/ai/usage_tracker.py": {
@@ -359,16 +339,6 @@
     "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
     "semantic_hash": ""
   },
-  "src/parsers/geekjob_page.py": {
-    "mtime": 1782842482.4414477,
-    "ast_hash": "16ae8a4ed7793c9c68c64cbcdbc9f42f",
-    "semantic_hash": ""
-  },
-  "src/parsers/habr_page.py": {
-    "mtime": 1782833891.9429111,
-    "ast_hash": "5fb079083475215fb8ba84d4e7aeac53",
-    "semantic_hash": ""
-  },
   "src/parsers/hh_state.py": {
     "mtime": 1783088452.4967816,
     "ast_hash": "35915a7c4196f01ca7f45290c9b02a4c",
@@ -377,11 +347,6 @@
   "src/parsers/json_embed.py": {
     "mtime": 1782833891.937478,
     "ast_hash": "3431102048c8b9314e1736e5fd368f68",
-    "semantic_hash": ""
-  },
-  "src/parsers/linkedin_jobs.py": {
-    "mtime": 1783344409.965471,
-    "ast_hash": "0f8e1d7cac121e16cd6cbe0070363a58",
     "semantic_hash": ""
   },
   "src/services/__init__.py": {
@@ -395,8 +360,8 @@
     "semantic_hash": ""
   },
   "src/services/cover_letter_context.py": {
-    "mtime": 1783344409.965911,
-    "ast_hash": "78ed22700b3ac6aa32c08dc578529c4c",
+    "mtime": 1785667670.9115872,
+    "ast_hash": "454cec4e94c352721ee69bba3f056300",
     "semantic_hash": ""
   },
   "src/services/cover_letter_service.py": {
@@ -405,28 +370,23 @@
     "semantic_hash": ""
   },
   "src/services/dashboard_service.py": {
-    "mtime": 1783344409.9613152,
-    "ast_hash": "044509c575c5e0930b49f51b4ab59c53",
+    "mtime": 1785667671.4851274,
+    "ast_hash": "66f80aceb364ead9d126b751000e20e2",
     "semantic_hash": ""
   },
   "src/services/detail_facade.py": {
-    "mtime": 1785664741.3003662,
-    "ast_hash": "5fe1f93c78022d0304cd7d6c8a7346f6",
+    "mtime": 1785667622.697357,
+    "ast_hash": "7b19c0dfac81344d11e2e76f9754ba6e",
     "semantic_hash": ""
   },
   "src/services/enrich_service.py": {
-    "mtime": 1783344409.9614773,
-    "ast_hash": "1fd5c44fec3b640cd672d8621d58a67d",
+    "mtime": 1785667587.5756767,
+    "ast_hash": "43b8a4817f2b62256e87746ca9e5b68f",
     "semantic_hash": ""
   },
   "src/services/extract_service.py": {
-    "mtime": 1783344409.9656613,
-    "ast_hash": "aec501119d43af9abb04307ccd34d222",
-    "semantic_hash": ""
-  },
-  "src/services/linkedin_outreach_service.py": {
-    "mtime": 1783344409.9531546,
-    "ast_hash": "30dbdc37be3a4da56ab8a698fd5a0d55",
+    "mtime": 1785667671.9263935,
+    "ast_hash": "e83495d2a803e822c5155acd25bacd0d",
     "semantic_hash": ""
   },
   "src/services/match_service.py": {
@@ -465,13 +425,13 @@
     "semantic_hash": ""
   },
   "src/services/scan_progress.py": {
-    "mtime": 1783344409.965589,
-    "ast_hash": "0cf199748584a20f02e4eb1e4629aebb",
+    "mtime": 1785667588.3894916,
+    "ast_hash": "4f2c6f69ed2b0156229e6f5f70a582a3",
     "semantic_hash": ""
   },
   "src/services/scan_service.py": {
-    "mtime": 1783344409.9615536,
-    "ast_hash": "ee5f8ebd9038ab522ac89def0f4bcf61",
+    "mtime": 1785667585.5694728,
+    "ast_hash": "cb7d1bafa48bfc52e93f06af2e665ef3",
     "semantic_hash": ""
   },
   "src/services/schedule_service.py": {
@@ -480,13 +440,13 @@
     "semantic_hash": ""
   },
   "src/services/scheduled_job.py": {
-    "mtime": 1783344409.9531102,
-    "ast_hash": "74c22bbe292c4ae76f59a009a5073c48",
+    "mtime": 1785667589.1867626,
+    "ast_hash": "43fde812d03ca51c355e15f51a0294e4",
     "semantic_hash": ""
   },
   "src/services/search_service.py": {
-    "mtime": 1783344409.9658847,
-    "ast_hash": "1f406380aded3cc7c91bdb6c000c97b1",
+    "mtime": 1785667618.7214396,
+    "ast_hash": "3ba560f2e768d80eb77c7134e8a25577",
     "semantic_hash": ""
   },
   "src/services/today_service.py": {
@@ -589,39 +549,9 @@
     "ast_hash": "938a86d9add027c1f8b2a7e4ff141a4f",
     "semantic_hash": ""
   },
-  "tests/test_geekjob_page.py": {
-    "mtime": 1783088625.947407,
-    "ast_hash": "f60abcaa48a1539b0a9cc75afd5aea05",
-    "semantic_hash": ""
-  },
-  "tests/test_habr_page.py": {
-    "mtime": 1783088623.1057832,
-    "ast_hash": "d81248cf19af0d61f87db16895c1fc4e",
-    "semantic_hash": ""
-  },
   "tests/test_hh_state.py": {
     "mtime": 1783088492.0573545,
     "ast_hash": "828be6e611262a134baf67b160d15dcb",
-    "semantic_hash": ""
-  },
-  "tests/test_linkedin_outreach_normalize.py": {
-    "mtime": 1783344409.9658065,
-    "ast_hash": "af5287a78af21a45b43ebdde5ad96ea2",
-    "semantic_hash": ""
-  },
-  "tests/test_linkedin_outreach_prompt.py": {
-    "mtime": 1783344409.9655836,
-    "ast_hash": "7e69926cd045ff7e10b70b0a09516096",
-    "semantic_hash": ""
-  },
-  "tests/test_linkedin_outreach_service.py": {
-    "mtime": 1783344409.9613483,
-    "ast_hash": "61c75a9847c6cda3dbaf4864f63a6948",
-    "semantic_hash": ""
-  },
-  "tests/test_linkedin_parser.py": {
-    "mtime": 1783344409.9656088,
-    "ast_hash": "0aae457942c624430601dc07c95a374b",
     "semantic_hash": ""
   },
   "tests/test_list_for_matching.py": {
@@ -664,14 +594,9 @@
     "ast_hash": "035ff524114df62c414e64e2ae25d65d",
     "semantic_hash": ""
   },
-  "tests/test_search_linkedin.py": {
-    "mtime": 1783344409.9658942,
-    "ast_hash": "7ad9b4ddfd372f39c647d5ae7ee17f62",
-    "semantic_hash": ""
-  },
   "tests/test_search_service.py": {
-    "mtime": 1783090255.35071,
-    "ast_hash": "0ccccc63f89fc74049b2b4d8772524cd",
+    "mtime": 1785667677.0720012,
+    "ast_hash": "9bfba49e299338b1cc6886dbba0dd42b",
     "semantic_hash": ""
   },
   "tests/test_task_prompts.py": {
@@ -745,13 +670,13 @@
     "semantic_hash": ""
   },
   "ui/detail_page.py": {
-    "mtime": 1785664741.2721138,
-    "ast_hash": "1cd3ec9797e68341dfe623c5d4889488",
+    "mtime": 1785667639.614382,
+    "ast_hash": "1357dd974f78fef5715630fe2eecab85",
     "semantic_hash": ""
   },
   "ui/extract_progress.py": {
-    "mtime": 1783344409.9611084,
-    "ast_hash": "31fde933db1e2fbe0cb90107141015dd",
+    "mtime": 1785667674.2621503,
+    "ast_hash": "d377d095d78e57c15d61e69e08b2709c",
     "semantic_hash": ""
   },
   "ui/keyword_editor.py": {
@@ -765,8 +690,8 @@
     "semantic_hash": ""
   },
   "ui/navigation.py": {
-    "mtime": 1783344409.9613273,
-    "ast_hash": "34d8aa36b32850770776e7a4623b7de1",
+    "mtime": 1785667636.2013488,
+    "ast_hash": "6de0fa198168324979fd50438b7dd835",
     "semantic_hash": ""
   },
   "ui/onboarding_page.py": {
@@ -785,8 +710,8 @@
     "semantic_hash": ""
   },
   "ui/parse_setup_page.py": {
-    "mtime": 1783344409.9716785,
-    "ast_hash": "985e17cde15f3e9ca3d28454c2f6354c",
+    "mtime": 1785667621.4069693,
+    "ast_hash": "e1e4b18a08354aeb4574a7343ee198f4",
     "semantic_hash": ""
   },
   "ui/profile_filter.py": {
@@ -795,8 +720,8 @@
     "semantic_hash": ""
   },
   "ui/public_stub.py": {
-    "mtime": 1785666210.069823,
-    "ast_hash": "57df9ba06ec2d2f2379611e5ba5dd8d6",
+    "mtime": 1785667674.4840791,
+    "ast_hash": "527bd64771e6c0fec3fe93596258c6f6",
     "semantic_hash": ""
   },
   "ui/resume_advice_page.py": {
@@ -819,21 +744,6 @@
     "ast_hash": "0250486b3ba8187af204b4809413fcf4",
     "semantic_hash": ""
   },
-  "README.md": {
-    "mtime": 1785664477.232211,
-    "ast_hash": "f312029834e2b682aae5e2524f5caeb4",
-    "semantic_hash": ""
-  },
-  "README_ru.md": {
-    "mtime": 1783345702.870072,
-    "ast_hash": "bdfa9c4473af3b9834c1eefedacf1f1f",
-    "semantic_hash": ""
-  },
-  "SECURITY.md": {
-    "mtime": 1785667127.628448,
-    "ast_hash": "4094832aa9533bfcbea08375d718b9d5",
-    "semantic_hash": ""
-  },
   "config/criteria.yaml": {
     "mtime": 1785664477.241501,
     "ast_hash": "e1416b54c69b0de06ee1bcd6ada4e658",
@@ -845,8 +755,8 @@
     "semantic_hash": ""
   },
   "config/sources.yaml": {
-    "mtime": 1785664477.2443743,
-    "ast_hash": "ebb6298010fbf1dda81748665123b7b0",
+    "mtime": 1785667567.687513,
+    "ast_hash": "024a348d5d5bc8fd9f1741f4c339e059",
     "semantic_hash": ""
   },
   "requirements-browser.txt": {
@@ -857,16 +767,6 @@
   "requirements.txt": {
     "mtime": 1785666739.8504138,
     "ast_hash": "8bdac1a1d5202cf18b72fa39f697f878",
-    "semantic_hash": ""
-  },
-  "tests/fixtures/linkedin/job_page.jsonld.html": {
-    "mtime": 1783344409.9655836,
-    "ast_hash": "bd77cba59f2776b2bb907592b5388e61",
-    "semantic_hash": ""
-  },
-  "tests/fixtures/linkedin/search_fragment.html": {
-    "mtime": 1783344409.9658365,
-    "ast_hash": "744845c1cff5b4e9bf689e89b0726cab",
     "semantic_hash": ""
   }
 }

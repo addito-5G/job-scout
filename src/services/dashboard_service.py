@@ -112,7 +112,7 @@ def source_distribution(session: Session, *, profile_id: int | None = None) -> l
         .group_by(Vacancy.source)
         .order_by(func.count().desc())
     ).all()
-    labels = {"hh": "HeadHunter", "habr": "Habr", "geekjob": "Geekjob"}
+    labels = {"hh": "HeadHunter", "manual": "Вручную"}
     return [(labels.get(r[0], r[0]), int(r[1])) for r in rows]
 
 

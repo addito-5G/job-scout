@@ -10,28 +10,6 @@ from db.models import CandidateProfile, SearchSettings
 from services.profile_serialization import loads_json as _loads, to_search_dict as _profile_to_dict
 
 
-def _region_to_linkedin_location(regions: list[str] | None) -> str:
-    """Маппинг региона из настроек в geo для LinkedIn guest API."""
-    if not regions:
-        return "Russia"
-    region = regions[0].strip()
-    key = region.lower()
-    mapping = {
-        "москва": "Russia",
-        "moscow": "Russia",
-        "санкт-петербург": "Russia",
-        "спб": "Russia",
-        "saint petersburg": "Russia",
-        "россия": "Russia",
-        "russia": "Russia",
-    }
-    return mapping.get(key, region or "Russia")
-
-
-def _linkedin_extras_from_settings(settings: SearchSettings) -> dict:
-    return _loads(settings.ai_suggestions_json, {}) or {}
-
-
 def _keywords_from_profile(profile: CandidateProfile) -> list[str]:
     """Ключи поиска из title и recommended_roles (без привязки к роли)."""
     roles = _loads(profile.recommended_roles_json, [])
@@ -71,13 +49,7 @@ def _defaults_from_profile(profile: CandidateProfile) -> dict:
         "experience_filter": "3+",
         "sources_enabled": {
             "hh_parser": True,
-            "habr_parser": True,
-            "geekjob_parser": True,
-            "linkedin_parser": False,
         },
-        "linkedin_location": _region_to_linkedin_location(
-            _loads(profile.locations_json, []) or ["Москва"]
-        ),
     }
 
 
@@ -107,6 +79,7 @@ def build_search_draft(
         except Exception:
             pass
 
+    data["sources_enabled"] = {"hh_parser": True}
     return data
 
 
@@ -135,17 +108,7 @@ def save_search_settings(session: Session, profile_id: int, data: dict) -> Searc
     }
 
     queries = settings_to_queries_from_data(normalized)
-    habr_queries = settings_to_habr_queries_from_data(normalized)
-    sources_enabled = data.get("sources_enabled") or {
-        "hh_parser": True,
-        "habr_parser": True,
-        "geekjob_parser": True,
-        "linkedin_parser": False,
-    }
-    extras: dict = {}
-    linkedin_location = (data.get("linkedin_location") or "").strip()
-    if linkedin_location:
-        extras["linkedin_location"] = linkedin_location
+    sources_enabled = {"hh_parser": True}
 
     settings = SearchSettings(
         profile_id=profile_id,
@@ -161,10 +124,10 @@ def save_search_settings(session: Session, profile_id: int, data: dict) -> Searc
         required_skills_json=json.dumps(data.get("required_skills", []), ensure_ascii=False),
         experience_filter=data.get("experience_filter"),
         hh_queries_json=json.dumps(queries, ensure_ascii=False),
-        habr_queries_json=json.dumps(habr_queries, ensure_ascii=False),
-        geekjob_queries_json=json.dumps(habr_queries, ensure_ascii=False),
+        habr_queries_json=None,
+        geekjob_queries_json=None,
         sources_enabled_json=json.dumps(sources_enabled, ensure_ascii=False),
-        ai_suggestions_json=json.dumps(extras, ensure_ascii=False) if extras else None,
+        ai_suggestions_json=None,
         profile_label=profile_label,
         is_active=True,
     )
@@ -175,28 +138,19 @@ def save_search_settings(session: Session, profile_id: int, data: dict) -> Searc
 
 
 def search_settings_to_data(settings: SearchSettings) -> dict:
-    sources_enabled = _loads(settings.sources_enabled_json, None) or {
-        "hh_parser": True,
-        "habr_parser": True,
-        "geekjob_parser": True,
-        "linkedin_parser": False,
-    }
-    regions = _loads(settings.locations_json, [])
-    extras = _linkedin_extras_from_settings(settings)
     return {
         "desired_titles": _loads(settings.desired_titles_json, []),
         "salary_min": settings.salary_min,
         "salary_max": settings.salary_max,
         "salary_currency": settings.salary_currency or "RUR",
-        "regions": regions,
+        "regions": _loads(settings.locations_json, []),
         "work_formats": _loads(settings.work_formats_json, []),
         "employment_types": _loads(settings.employment_types_json, []),
         "keywords_include": _loads(settings.keywords_include_json, []),
         "keywords_exclude": _loads(settings.keywords_exclude_json, []),
         "required_skills": _loads(settings.required_skills_json, []),
         "experience_filter": settings.experience_filter,
-        "sources_enabled": sources_enabled,
-        "linkedin_location": extras.get("linkedin_location") or _region_to_linkedin_location(regions),
+        "sources_enabled": {"hh_parser": True},
     }
 
 
@@ -235,70 +189,12 @@ def settings_to_queries_from_data(data: dict) -> list[dict]:
     return queries
 
 
-def settings_to_habr_queries_from_data(data: dict) -> list[str]:
-    titles = data.get("desired_titles") or []
-    keywords = data.get("keywords_include") or []
-    seen: set[str] = set()
-    queries: list[str] = []
-    for item in [*titles[:3], *keywords[:5]]:
-        key = item.strip().lower()
-        if key and key not in seen:
-            seen.add(key)
-            queries.append(item.strip())
-    return queries
-
-
-def settings_to_linkedin_queries_from_data(data: dict) -> list[dict]:
-    """Запросы для LinkedIn guest API из настроек профиля."""
-    titles = data.get("desired_titles") or []
-    keywords = data.get("keywords_include") or []
-    seen: set[str] = set()
-    keyword_list: list[str] = []
-    for item in [*titles[:3], *keywords[:3]]:
-        key = item.strip().lower()
-        if key and key not in seen:
-            seen.add(key)
-            keyword_list.append(item.strip())
-    if not keyword_list:
-        return []
-
-    formats = data.get("work_formats") or []
-    remote_only = "remote" in formats
-    location = (
-        (data.get("linkedin_location") or "").strip()
-        or _region_to_linkedin_location(data.get("regions"))
-        or "Russia"
-    )
-
-    return [
-        {
-            "keywords": kw,
-            "location": location,
-            "remote_only": remote_only,
-        }
-        for kw in keyword_list[:3]
-    ]
-
-
 def settings_to_queries(settings: SearchSettings) -> list[dict]:
     cached = _loads(settings.hh_queries_json, None)
     if cached:
         return cached
     return settings_to_queries_from_data({
         "desired_titles": _loads(settings.desired_titles_json, []),
+        "keywords_include": _loads(settings.keywords_include_json, []),
         "work_formats": _loads(settings.work_formats_json, []),
     })
-
-
-def settings_to_habr_queries(settings: SearchSettings) -> list[str]:
-    cached = _loads(settings.habr_queries_json, None)
-    if cached:
-        return cached
-    return settings_to_habr_queries_from_data({
-        "desired_titles": _loads(settings.desired_titles_json, []),
-        "keywords_include": _loads(settings.keywords_include_json, []),
-    })
-
-
-def settings_to_linkedin_queries(settings: SearchSettings) -> list[dict]:
-    return settings_to_linkedin_queries_from_data(search_settings_to_data(settings))

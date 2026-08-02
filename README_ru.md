@@ -8,7 +8,7 @@
 [![Streamlit](https://img.shields.io/badge/UI-Streamlit-FF4B4B.svg)](https://streamlit.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-> Личный ассистент поиска работы **для любой роли**. Загружаете резюме (`.md`) — AI строит профиль, генерирует ключи для парсинга hh.ru / Habr / Geekjob и ранжирует вакансии под **ваш** опыт. Репозиторий: [`job-scout`](https://github.com/addito-5G/job-scout). UI-бренд: **NextMove**. Не SaaS и не массовый автоотклик — анализ, приоритизация и материалы для отклика с вашим контролем.
+> Личный ассистент поиска работы **для любой роли**. Загружаете резюме (`.md`) — AI строит профиль, генерирует ключи для парсинга **hh.ru** и ранжирует вакансии под **ваш** опыт. Репозиторий: [`job-scout`](https://github.com/addito-5G/job-scout). UI-бренд: **NextMove**. Не SaaS и не массовый автоотклик — анализ, приоритизация и материалы для отклика с вашим контролем.
 
 **Главный вопрос:** *что сделать сегодня, чтобы повысить шанс на оффер?*
 
@@ -34,10 +34,9 @@
 
 | Боль | Как помогает NextMove |
 |------|------------------------|
-| Три площадки — три вкладки | Автоскан **hh.ru**, **Habr Career**, **Geekjob** |
 | Сотни вакансий — неясно, куда бить | **Fit Score %** — детерминированный матч + что усилить |
 | Смена роли (аналитик → дизайнер → PM) | Фильтр профиля без очистки БД |
-| Отклик отнимает время | Черновик письма + мягкий вход в LinkedIn |
+| Отклик отнимает время | Черновик письма + AI-рекомендации под вакансию |
 | Нет ощущения прогресса | Воронка откликов и daily briefing |
 
 ---
@@ -53,7 +52,7 @@
 | **Рынок** | Market Insights — спрос, ЗП, навыки |
 | **Career Agent** | Настройки поиска (роль, ключи, зарплата) |
 
-Пайплайн: **scan → enrich → fit score → cover letter** (+ опционально LinkedIn guest). Опционально — ежедневный запуск в 09:00 через macOS launchd.
+Пайплайн: **scan (hh.ru) → enrich → fit score → cover letter**. Опционально — ежедневный запуск в 09:00 через macOS launchd.
 
 ---
 
@@ -63,18 +62,15 @@
 
 1. Загрузка резюме `.md` → `parse_resume` строит профиль (навыки, роли, вилка ЗП)
 2. AI предлагает настройки поиска (`suggest_filters`) — должности, ключи, регионы
-3. Скан подтягивает вакансии с **hh.ru**, **Habr**, **Geekjob**, опционально **LinkedIn** (guest API)
+3. Скан подтягивает вакансии с **hh.ru**
 4. **Fit Score** (`domain/fit_score.py`) — % соответствия, совпадения, пробелы, что усилить
-5. Сопроводительное + мягкий вход в LinkedIn — черновики AI, отправляете вы сами
+5. Сопроводительное + AI-рекомендации — черновики AI, отправляете вы сами
 
 ```mermaid
 flowchart LR
     R[Резюме .md] --> P[Профиль кандидата]
     P --> S[Настройки поиска]
     HH[hh.ru] --> SC[Scan service]
-    HB[Habr] --> SC
-    GJ[Geekjob] --> SC
-    LI[LinkedIn guest] --> SC
     SC --> DB[(SQLite + Alembic)]
     DB --> F[Fit Score]
     F --> UI[NextMove UI]
@@ -102,7 +98,7 @@ ollama pull qwen2.5:14b
 | Задача | Primary | Цепочка fallback |
 |--------|---------|------------------|
 | `parse_resume`, `suggest_filters` | **Ollama** | Yandex → Groq |
-| `generate_cover_letter`, `generate_linkedin_outreach`, `improve_resume` | **YandexGPT** | Groq → **Ollama** |
+| `generate_cover_letter`, `improve_resume` | **YandexGPT** | Groq → **Ollama** |
 
 **Fit Score** считается локально (без LLM) — стабильный %, совпадения/пробелы и «что усилить».
 
@@ -197,7 +193,7 @@ job-scout/                    # имя репозитория (UI-бренд: Ne
     │   ├── match_service.py
     │   ├── cover_letter_service.py
     │   └── vacancy_service/  # списки, детали, запись
-    └── adapters/             # парсеры hh, habr, geekjob
+    └── adapters/             # парсер hh.ru
 ```
 
 Пакет ставится в editable mode — `scripts/` и `ui/` импортируют `src/` без `sys.path`.

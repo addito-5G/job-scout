@@ -5,8 +5,6 @@ import time
 
 from sqlalchemy.orm import Session
 
-from adapters.geekjob_parser import enrich_geekjob_vacancy
-from adapters.habr_parser import enrich_habr_vacancy
 from browser.fetcher import PageFetcher, create_fetcher
 from db.repositories.vacancy_repo import apply_enrichment, list_for_enrichment
 from parsers.hh_state import extract_state, parse_vacancy_detail
@@ -28,10 +26,6 @@ def enrich_hh_vacancy(url: str, fetcher: PageFetcher) -> dict | None:
 def _enrich_by_source(source: str, url: str, fetcher: PageFetcher) -> dict | None:
     if source == "hh" or "hh.ru/vacancy/" in url:
         return enrich_hh_vacancy(url, fetcher)
-    if source == "habr" or "career.habr.com/vacancies/" in url:
-        return enrich_habr_vacancy(url, fetcher)
-    if source == "geekjob" or "geekjob.ru/vacancy/" in url:
-        return enrich_geekjob_vacancy(url, fetcher)
     return None
 
 

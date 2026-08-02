@@ -7,7 +7,6 @@ import json
 from db.tables import CandidateProfile
 from services.search_service import (
     _defaults_from_profile,
-    settings_to_habr_queries_from_data,
     settings_to_queries_from_data,
 )
 
@@ -29,6 +28,7 @@ def test_defaults_use_profile_title_not_pm_hardcode():
     assert "product manager" not in [k.lower() for k in data["keywords_include"]]
     assert data["desired_titles"] == ["Data Engineer", "ETL Developer"]
     assert "Data Engineer" in data["keywords_include"]
+    assert data["sources_enabled"] == {"hh_parser": True}
 
 
 def test_settings_to_queries_from_profile_titles():
@@ -37,10 +37,3 @@ def test_settings_to_queries_from_profile_titles():
     )
     assert queries[0]["text"] == "Backend Developer"
     assert queries[0]["schedule"] == "remote"
-
-
-def test_settings_to_habr_queries_without_pm_fallback():
-    queries = settings_to_habr_queries_from_data(
-        {"desired_titles": ["UX Designer"], "keywords_include": []}
-    )
-    assert queries == ["UX Designer"]

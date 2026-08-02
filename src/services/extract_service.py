@@ -30,7 +30,7 @@ def extract_search_keys(
     profile, _ = parse_resume_upload(session, content, display_name=display_name, filename=filename)
 
     _p(0.6, "Анализируем профиль для рынка РФ...")
-    _p(0.8, "Формируем ключи для HH, Habr, Geekjob...")
+    _p(0.8, "Формируем ключи для hh.ru...")
     draft = build_search_draft(session, profile.id)
 
     _p(1.0, "Ключи готовы")

@@ -17,7 +17,7 @@ def render_public_stub(*, error: str | None = None) -> None:
   <h1 style="margin:0 0 0.5rem;font-size:2rem">{PRODUCT_NAME}</h1>
   <p style="opacity:0.75;margin:0 0 1.5rem">{PRODUCT_TAGLINE}</p>
   <p>
-    Личный AI Career Copilot: резюме → поиск вакансий (hh.ru / Habr / Geekjob / LinkedIn) →
+    Личный AI Career Copilot: резюме → поиск вакансий на hh.ru →
     Fit Score → сопроводительные и рекомендации.
   </p>
   <p style="opacity:0.8">

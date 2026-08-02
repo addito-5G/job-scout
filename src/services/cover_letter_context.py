@@ -152,38 +152,6 @@ def profile_for_cover_letter_json(profile: CandidateProfile, *, target_role: str
     return json.dumps({k: v for k, v in data.items() if v is not None}, ensure_ascii=False)
 
 
-def profile_for_outreach_json(profile: CandidateProfile, *, target_role: str) -> str:
-    """Контекст профиля для LinkedIn outreach — факты + углы позиционирования."""
-    skills = _loads(profile.skills_json, [])
-    strengths = _loads(profile.strengths_json, [])
-    domains = _loads(profile.domains_json, [])
-    recommended = _loads(profile.recommended_roles_json, [])
-
-    data: dict = {
-        "first_name": first_name_from(profile.full_name),
-        "role_title": role_title_for_letter(profile, target_role),
-        "domains": domains[:5],
-        "top_skills": skills[:8],
-        "highlights": strengths[:4],
-        "recommended_roles": recommended[:3],
-        "experience_years": profile.experience_years,
-        "builder_angles": [
-            "созидатель, builder mindset",
-            "интерес к сложным системам и новым продуктам",
-            "data-driven подход",
-            "изучает AI-агентов и automation",
-            "вера, что AI усиливает людей и команды",
-        ],
-    }
-    summary = (profile.ai_summary or "").strip()
-    if summary:
-        data["ai_summary"] = summary[:500]
-    exp = (profile.experience_summary or "").strip()
-    if exp:
-        data["experience_summary"] = exp[:400]
-    return json.dumps(data, ensure_ascii=False)
-
-
 def match_context_for_cover_letter(match: VacancyMatch | None) -> str:
     if not match:
         return "{}"

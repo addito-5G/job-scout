@@ -26,3 +26,4 @@ def test_task_registry_has_vacancy_fit_advice():
 
     assert "fast_match" not in TASK_PROMPT_BUILDERS
     assert "match_vacancy_deep" not in TASK_PROMPT_BUILDERS
+    assert "generate_linkedin_outreach" not in TASK_PROMPT_BUILDERS

@@ -8,12 +8,7 @@ from config_loader import load_sources
 from adapters.registry import build_adapters
 from services.profile_service import get_active_profile
 from services.scan_progress import ScanProgressFn, label_for
-from services.search_service import (
-    get_active_search_settings,
-    settings_to_habr_queries,
-    settings_to_linkedin_queries,
-    settings_to_queries,
-)
+from services.search_service import get_active_search_settings, settings_to_queries
 from services.vacancy_service import upsert_scored_vacancy
 from sqlalchemy.orm import Session
 
@@ -21,9 +16,6 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_SOURCES = {
     "hh_parser": True,
-    "habr_parser": True,
-    "geekjob_parser": True,
-    "linkedin_parser": False,
 }
 
 
@@ -47,7 +39,7 @@ def _enabled_sources(settings) -> dict[str, bool]:
     try:
         data = json.loads(settings.sources_enabled_json)
         if isinstance(data, dict):
-            return {**DEFAULT_SOURCES, **{k: bool(v) for k, v in data.items()}}
+            return {**DEFAULT_SOURCES, **{k: bool(v) for k, v in data.items() if k in DEFAULT_SOURCES}}
     except json.JSONDecodeError:
         pass
     return dict(DEFAULT_SOURCES)
@@ -55,7 +47,7 @@ def _enabled_sources(settings) -> dict[str, bool]:
 
 def _apply_source_toggles(sources: dict, enabled: dict[str, bool]) -> dict:
     out = dict(sources)
-    for key in ("hh_parser", "habr_parser", "geekjob_parser", "linkedin_parser"):
+    for key in ("hh_parser",):
         if key in out:
             out[key] = {**out[key], "enabled": enabled.get(key, out[key].get("enabled", True))}
     return out
@@ -90,36 +82,19 @@ def run_scan(
         return ScanResult()
 
     db_queries = None
-    habr_queries = None
-    geekjob_queries = None
-    linkedin_queries = None
     active_settings_id: int | None = None
     settings = get_active_search_settings(session, profile.id)
     if settings:
         active_settings_id = settings.id
         db_queries = settings_to_queries(settings)
-        habr_queries = settings_to_habr_queries(settings)
-        geekjob_queries = settings_to_habr_queries(settings)
-        linkedin_queries = settings_to_linkedin_queries(settings)
         logger.info("Настройки из профиля #%s (settings #%s)", profile.id, settings.id)
 
     sources = _apply_source_toggles(sources_root, _enabled_sources(settings))
-
-    if habr_queries and sources.get("habr_parser"):
-        sources = {**sources, "habr_parser": {**sources.get("habr_parser", {}), "queries": habr_queries}}
-    if geekjob_queries and sources.get("geekjob_parser"):
-        sources = {**sources, "geekjob_parser": {**sources.get("geekjob_parser", {}), "queries": geekjob_queries}}
-    if linkedin_queries and sources.get("linkedin_parser"):
-        sources = {
-            **sources,
-            "linkedin_parser": {**sources.get("linkedin_parser", {}), "queries": linkedin_queries},
-        }
 
     adapters = build_adapters(
         sources,
         browser,
         db_queries=db_queries,
-        linkedin_queries=linkedin_queries,
         manual_url=manual_url,
         manual_title=manual_title,
         manual_company=manual_company,

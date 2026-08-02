@@ -7,26 +7,6 @@ browser:
   enrich_limit: 30
 
 sources:
-  habr_parser:
-    enabled: true
-    pages_per_query: 1
-    delay_seconds: 2
-    queries:
-      - product manager
-      - продакт
-
-  geekjob_parser:
-    enabled: true
-    pages_per_query: 1
-    delay_seconds: 2
-    queries:
-      - product manager
-      - продакт
-
-  habr_rss:
-    enabled: false
-    url: "https://career.habr.com/vacancies/rss"
-
   hh_parser:
     enabled: true
     pages_per_query: 2
@@ -38,16 +18,5 @@ sources:
       - text: "продакт менеджер"
         area: 1
 
-  hh_api:
-    enabled: false
-
   manual:
     enabled: true
-
-  linkedin_parser:
-    enabled: false
-    pages_per_query: 2
-    delay_seconds: 3
-    location: "Russia"
-    f_TPR: r604800
-    remote_only: false

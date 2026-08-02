@@ -8,7 +8,7 @@
 [![Streamlit](https://img.shields.io/badge/UI-Streamlit-FF4B4B.svg)](https://streamlit.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-> Personal job-search assistant for **any role**. Upload your resume (`.md`) — AI builds a candidate profile, generates search keywords for hh.ru / Habr / Geekjob, and ranks vacancies against **your** background. GitHub repo: [`job-scout`](https://github.com/addito-5G/job-scout). UI brand: **NextMove**. Not SaaS, not mass auto-apply — analysis, prioritization, and application materials with you in the loop.
+> Personal job-search assistant for **any role**. Upload your resume (`.md`) — AI builds a candidate profile, generates search keywords for **hh.ru**, and ranks vacancies against **your** background. GitHub repo: [`job-scout`](https://github.com/addito-5G/job-scout). UI brand: **NextMove**. Not SaaS, not mass auto-apply — analysis, prioritization, and application materials with you in the loop.
 
 **Core question:** *what should I do today to maximize my chances of getting an offer?*
 
@@ -34,10 +34,9 @@
 
 | Pain | How NextMove helps |
 |------|---------------------|
-| Three platforms, three tabs | Auto-scan **hh.ru**, **Habr Career**, **Geekjob** |
 | Hundreds of jobs — where to focus | **Fit Score %** — deterministic match + gaps to improve |
 | Role switch (analyst → designer → PM) | Profile filter without wiping the DB |
-| Applying takes time | Cover letter draft + LinkedIn soft outreach per vacancy |
+| Applying takes time | Cover letter draft + AI fit advice per vacancy |
 | No sense of progress | Application funnel + daily briefing |
 
 ---
@@ -53,7 +52,7 @@
 | **Market** | Market Insights — demand, salary, skills |
 | **Career Agent** | Search preferences (role, keywords, salary) |
 
-Pipeline: **scan → enrich → fit score → cover letter** (+ optional LinkedIn guest parse). Optional daily run at 09:00 via macOS launchd.
+Pipeline: **scan (hh.ru) → enrich → fit score → cover letter**. Optional daily run at 09:00 via macOS launchd.
 
 ---
 
@@ -63,18 +62,15 @@ Pipeline: **scan → enrich → fit score → cover letter** (+ optional LinkedI
 
 1. Upload resume `.md` → `parse_resume` builds profile (skills, roles, salary range)
 2. AI suggests search settings (`suggest_filters`) — job titles, keywords, regions
-3. Scan pulls vacancies from **hh.ru**, **Habr**, **Geekjob**, optional **LinkedIn** (guest API)
+3. Scan pulls vacancies from **hh.ru**
 4. **Fit Score** (`domain/fit_score.py`) ranks each vacancy vs your profile — skills, role, experience, gaps
-5. Cover letter + optional LinkedIn outreach message — AI drafts, you send manually
+5. Cover letter + AI fit advice — AI drafts, you send manually
 
 ```mermaid
 flowchart LR
     R[Resume .md] --> P[Candidate profile]
     P --> S[Search settings]
     HH[hh.ru] --> SC[Scan service]
-    HB[Habr] --> SC
-    GJ[Geekjob] --> SC
-    LI[LinkedIn guest] --> SC
     SC --> DB[(SQLite + Alembic)]
     DB --> F[Fit Score]
     F --> UI[NextMove UI]
@@ -102,7 +98,7 @@ ollama pull qwen2.5:14b
 | Task | Primary | Fallback chain |
 |------|---------|----------------|
 | `parse_resume`, `suggest_filters` | **Ollama** | Yandex → Groq |
-| `generate_cover_letter`, `generate_linkedin_outreach`, `improve_resume` | **YandexGPT** | Groq → **Ollama** |
+| `generate_cover_letter`, `improve_resume` | **YandexGPT** | Groq → **Ollama** |
 
 **Fit Score** is computed locally (no LLM) — consistent %, matched/missing skills, and “what to strengthen”.
 
@@ -197,7 +193,7 @@ job-scout/                    # repo name (UI brand: NextMove)
     │   ├── match_service.py
     │   ├── cover_letter_service.py
     │   └── vacancy_service/  # listing, detail, writes
-    └── adapters/             # hh, habr, geekjob parsers
+    └── adapters/             # hh.ru parser
 ```
 
 Install in editable mode (`pip install -e ".[dev]"`) so `scripts/` and `ui/` import `src/` without `sys.path` hacks.

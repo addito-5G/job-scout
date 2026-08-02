@@ -34,10 +34,7 @@ ROLE_SKILL_GUIDANCE: dict[str, str] = {
 SOURCE_LABELS: dict[str, str] = {
     "hh": "HeadHunter",
     "hh_parser": "HeadHunter",
-    "habr": "Habr Career",
-    "habr_parser": "Habr Career",
-    "geekjob": "Geekjob",
-    "geekjob_parser": "Geekjob",
+    "manual": "ручной ввод",
 }
 
 COVER_LETTER_SYSTEM = """Ты помогаешь кандидату написать сопроводительное письмо на русском для отклика на вакансию.

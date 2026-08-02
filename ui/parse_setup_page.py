@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-
 import streamlit as st
-
 
 from db import get_session, init_db
 from services.parse_estimate import estimate_parse_seconds
@@ -15,8 +13,6 @@ from services.search_service import (
     get_active_search_settings,
     save_search_settings,
     search_settings_to_data,
-    settings_to_habr_queries_from_data,
-    settings_to_linkedin_queries_from_data,
     settings_to_queries_from_data,
 )
 from ui.data import clear_data_cache
@@ -74,33 +70,7 @@ def render_keywords_step(*, setup_mode: bool = False) -> None:
         if profile.title:
             st.success(f"Профиль: **{profile.display_name}** · должность: **{profile.title}**")
 
-        st.markdown("**Источники вакансий**")
-        src_cols = st.columns(4)
-        sources_enabled = draft.get("sources_enabled") or {
-            "hh_parser": True,
-            "habr_parser": True,
-            "geekjob_parser": True,
-            "linkedin_parser": False,
-        }
-        with src_cols[0]:
-            sources_enabled["hh_parser"] = st.checkbox("HeadHunter", value=sources_enabled.get("hh_parser", True))
-        with src_cols[1]:
-            sources_enabled["habr_parser"] = st.checkbox("Habr Career", value=sources_enabled.get("habr_parser", True))
-        with src_cols[2]:
-            sources_enabled["geekjob_parser"] = st.checkbox("Geekjob", value=sources_enabled.get("geekjob_parser", True))
-        with src_cols[3]:
-            sources_enabled["linkedin_parser"] = st.checkbox(
-                "LinkedIn",
-                value=sources_enabled.get("linkedin_parser", False),
-                help="Публичный парсинг без входа в аккаунт",
-            )
-
-        if sources_enabled.get("linkedin_parser"):
-            draft["linkedin_location"] = st.text_input(
-                "Регион LinkedIn",
-                value=draft.get("linkedin_location") or "Russia",
-                help="Geo для guest API: Russia, Moscow, United States…",
-            )
+        st.caption("Источник вакансий: **HeadHunter (hh.ru)**")
 
         if st.button("🔄 Переподобрать ключи через AI", type="secondary"):
             with st.spinner("Ollama подбирает ключи..."):
@@ -126,7 +96,7 @@ def render_keywords_step(*, setup_mode: bool = False) -> None:
                 "Ключевые слова",
                 "kw_keywords_include",
                 kind="include",
-                hint="Habr Career и Geekjob",
+                hint="Дополнительные формулировки для поиска на hh.ru",
                 rev=rev,
             )
         with col_b:
@@ -151,34 +121,14 @@ def render_keywords_step(*, setup_mode: bool = False) -> None:
             "desired_titles": desired_titles or keywords_include[:3],
             "keywords_include": keywords_include,
             "keywords_exclude": keywords_exclude,
-            "sources_enabled": sources_enabled,
+            "sources_enabled": {"hh_parser": True},
         }
         hh_queries = settings_to_queries_from_data(preview_data)
-        habr_queries = settings_to_habr_queries_from_data(preview_data)
-        linkedin_queries = settings_to_linkedin_queries_from_data(preview_data)
 
-        with st.expander("Как будут выглядеть запросы на площадках", expanded=False):
-            p1, p2, p3, p4 = st.columns(4)
-            with p1:
-                st.markdown("**HeadHunter**")
-                for q in hh_queries:
-                    st.markdown(f"- {q.get('text', q)}")
-            with p2:
-                st.markdown("**Habr**")
-                for q in habr_queries:
-                    st.markdown(f"- {q}")
-            with p3:
-                st.markdown("**Geekjob**")
-                for q in habr_queries:
-                    st.markdown(f"- {q}")
-            with p4:
-                st.markdown("**LinkedIn**")
-                if linkedin_queries:
-                    for q in linkedin_queries:
-                        remote = " · remote" if q.get("remote_only") else ""
-                        st.markdown(f"- {q.get('keywords')} ({q.get('location')}{remote})")
-                else:
-                    st.caption("Включите LinkedIn и добавьте должности/ключи")
+        with st.expander("Как будут выглядеть запросы на hh.ru", expanded=False):
+            st.markdown("**HeadHunter**")
+            for q in hh_queries:
+                st.markdown(f"- {q.get('text', q)}")
 
         schedule_data = render_schedule_settings(expanded=setup_mode or not get_active_search_settings(session, profile.id))
 

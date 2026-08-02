@@ -12,17 +12,14 @@ from services.detail_facade import (
     best_match,
     generate_fit_advice,
     generate_letter,
-    generate_outreach,
     load_detail,
     load_profile,
     load_vacancy,
     normalize_letter,
-    people_search_url,
     refresh_fit_match,
 )
 from services.vacancy_status_service import set_vacancy_status
 from ui.components import format_salary, match_score_badge, skill_badges, work_format_label
-from ai.prompts.linkedin_outreach import CONTACT_ROLE_UI_LABELS
 from ui.constants import recommendation_label
 from ui.data import cached_profile_id, clear_data_cache
 from ui.navigation import source_label
@@ -282,60 +279,6 @@ def render_detail(vacancy_id: int) -> None:
             st.text_area("Текст", height=300, key=letter_state_key)
         else:
             st.info("Загрузите резюме для генерации письма.")
-
-        if detail.source == "linkedin":
-            st.subheader("💬 Мягкий вход в LinkedIn")
-            st.caption(
-                "Черновик сообщения для connection note или первого DM. "
-                "Отправляете вручную — аккаунт не затрагивается."
-            )
-
-            outreach_key = f"linkedin_outreach_{vacancy_id}"
-            role_key = f"linkedin_outreach_role_{vacancy_id}"
-            if outreach_key not in st.session_state:
-                st.session_state[outreach_key] = ""
-
-            contact_role = st.selectbox(
-                "Кому пишем",
-                options=list(CONTACT_ROLE_UI_LABELS.keys()),
-                format_func=lambda x: CONTACT_ROLE_UI_LABELS.get(x, x),
-                key=role_key,
-            )
-
-            vacancy_orm = load_vacancy(session, vacancy_id)
-            if profile and vacancy_orm:
-                search_url = people_search_url(vacancy_orm, contact_role=contact_role)
-                col_gen, col_search = st.columns(2)
-                with col_gen:
-                    if st.button(
-                        "✨ Сгенерировать сообщение",
-                        type="secondary",
-                        key=f"generate_outreach_{vacancy_id}",
-                    ):
-                        try:
-                            with st.spinner("YandexGPT готовит мягкий вход…"):
-                                msg = generate_outreach(
-                                    session,
-                                    profile,
-                                    vacancy_orm,
-                                    contact_role=contact_role,
-                                    use_cache=False,
-                                )
-                            st.session_state[outreach_key] = msg
-                            st.toast("Черновик готов", icon="✅")
-                            st.rerun()
-                        except AIRouterError as exc:
-                            st.warning(f"AI недоступен: {exc}")
-                        except Exception as exc:
-                            st.warning(f"Ошибка: {exc}")
-                with col_search:
-                    st.link_button("🔍 Найти контакт на LinkedIn", search_url, use_container_width=True)
-
-                st.text_area("Сообщение (скопируйте и отправьте сами)", height=180, key=outreach_key)
-                msg_len = len(st.session_state.get(outreach_key, "") or "")
-                if msg_len:
-                    hint = "в норме" if 280 <= msg_len <= 550 else ("коротковато" if msg_len < 280 else "длинновато")
-                    st.caption(f"{msg_len} символов · {hint} (цель 280–550)")
 
         st.subheader("Действия")
         a1, a2, a3 = st.columns(3)

@@ -65,29 +65,6 @@ def _build_cover_letter(payload: dict[str, Any]) -> tuple[str, str | None]:
     )
 
 
-def _build_linkedin_outreach(payload: dict[str, Any]) -> tuple[str, str | None]:
-    from ai.prompts.linkedin_outreach import (
-        LINKEDIN_OUTREACH_EXAMPLE,
-        LINKEDIN_OUTREACH_SYSTEM,
-        format_linkedin_outreach_prompt,
-    )
-
-    profile_data = json.loads(payload.get("profile_json", "{}"))
-    return (
-        format_linkedin_outreach_prompt(
-            example=LINKEDIN_OUTREACH_EXAMPLE,
-            candidate_first_name=profile_data.get("first_name", "кандидат"),
-            contact_role=payload.get("contact_role", "recruiter"),
-            company_name=payload.get("company_name", ""),
-            vacancy_title=payload.get("vacancy_title", ""),
-            profile_json=payload.get("profile_json", "{}"),
-            vacancy_json=payload.get("vacancy_json", "{}"),
-            match_context_json=payload.get("match_context_json", "{}"),
-        ),
-        LINKEDIN_OUTREACH_SYSTEM,
-    )
-
-
 def _build_company_brief(payload: dict[str, Any]) -> tuple[str, str | None]:
     from ai.prompts.company_brief import COMPANY_BRIEF_PROMPT, COMPANY_BRIEF_SYSTEM
 
@@ -141,7 +118,6 @@ TASK_PROMPT_BUILDERS: dict[str, PromptBuilder] = {
     "analyze_resume_ru": _build_analyze_resume_ru,
     "suggest_filters": _build_suggest_filters,
     "generate_cover_letter": _build_cover_letter,
-    "generate_linkedin_outreach": _build_linkedin_outreach,
     "improve_resume": _build_improve_resume,
     "vacancy_fit_advice": _build_vacancy_fit_advice,
     "company_brief": _build_company_brief,

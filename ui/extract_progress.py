@@ -19,7 +19,7 @@ def run_extract_with_progress() -> None:
     display_name = st.session_state.get("pending_profile_display_name", "").strip()
 
     st.markdown("## Извлекаем ключи из резюме")
-    st.info("AI анализирует резюме и подбирает запросы для HeadHunter, Habr и Geekjob.")
+    st.info("AI анализирует резюме и подбирает запросы для HeadHunter (hh.ru).")
 
     if not content.strip():
         st.error("Текст резюме пустой. Вернитесь на шаг 1.")

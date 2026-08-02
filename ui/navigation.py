@@ -11,10 +11,9 @@ from ui.workflow import go_to_setup, start_manual_refresh
 
 SOURCE_META: dict[str, tuple[str, str]] = {
     "hh": ("HeadHunter", "🟥"),
-    "habr": ("Habr Career", "🟦"),
-    "geekjob": ("Geekjob", "🟩"),
-    "linkedin": ("LinkedIn", "🔗"),
+    "manual": ("Вручную", "📌"),
 }
+
 
 NAV_ITEMS: list[tuple[str, str, str]] = [
     ("today", "🏠", "Сегодня"),
@@ -96,6 +95,8 @@ def render_setup_sidebar() -> None:
         st.rerun()
 
 
-def source_label(source: str) -> str:
+def source_label(source: str | None) -> str:
+    if not source:
+        return "—"
     label, icon = SOURCE_META.get(source, (source, "📋"))
     return f"{icon} {label}"
