@@ -1,0 +1,41 @@
+---
+description: graphify knowledge graph — ориентир по архитектуре job-scout / NextMove
+alwaysApply: true
+---
+
+# Graphify (NextMove / job-scout)
+
+Knowledge graph: `graphify-out/` (built with [graphify](https://github.com/Graphify-Labs/graphify)).
+
+## Перед исследованием кода
+
+Сначала опирайся на граф, не на слепой grep по всему репо:
+
+```bash
+graphify query "<вопрос>" --graph graphify-out/graph.json
+graphify path "A" "B" --graph graphify-out/graph.json
+graphify explain "<символ>" --graph graphify-out/graph.json
+```
+
+Читай `graphify-out/GRAPH_REPORT.md` для обзора архитектуры (god nodes, communities, циклы импортов).
+
+`Read` / `Grep` / `Glob` — после того, как граф указал файлы/символы, или когда правишь конкретные строки.
+
+Если `graphify-out/graph.json` нет — сначала: `graphify update .`
+
+После существенных правок кода: `graphify update .` (AST only, без API).
+
+## Карта проекта (hubs)
+
+| Область | Точки входа в графе |
+|---------|---------------------|
+| UI | `app.py`, `render_detail`, `navigation.py`, `data.py` |
+| Скан рынка | `scan_service.py`, `HhParserAdapter`, `habr_parser`, `geekjob_parser`, `linkedin_jobs` |
+| Матчинг | `fit_score.py`, `match_service.py`, `batch_fit_match` |
+| AI | `AIRouter`, `task_prompts.py`, `vacancy_fit_advice`, `cover_letter_service`, `resume_advice_service` |
+| Профиль | `CandidateProfile`, `profile_service.py`, `search_service.py` |
+| БД | `init_db`, `session_scope`, `vacancy_repo.py`, `Vacancy`, `VacancyMatch` |
+
+God nodes: `CandidateProfile`, `AIRouter`, `Vacancy`, `session_scope`, `upsert_vacancy`.
+
+Карьерный профиль (резюме-канон) — отдельный граф: `career-profile/graphify-out/`.

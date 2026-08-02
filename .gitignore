@@ -38,3 +38,4 @@ browser_config.json
 .idea/
 .vscode/
 *.swp
+graphify-out/cache/
