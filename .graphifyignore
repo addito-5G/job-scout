@@ -1,0 +1,11 @@
+# Keep graph focused on NextMove product code.
+.agents/
+automation/
+career-profile/
+assets/
+graphify-out/
+docs/
+*.md
+scripts/build_nakimov*
+scripts/build_nakimova*
+scripts/send_telegram_radar.py

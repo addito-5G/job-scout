@@ -2,11 +2,12 @@
 
 ## Do not commit
 
-- `.env` — API keys (Groq, Yandex, HH OAuth)
+- `.env` — API keys (Groq, Yandex)
 - `yandex_key.json` — Yandex Cloud service account
 - `data/vacancies.db` — scraped vacancies and match history
 - `data/resumes/` — personal resume files
 - `browser_config.json` — may contain local machine paths
+- `career-profile/` — personal career canon (local only)
 
 All of the above are listed in `.gitignore`.
 
@@ -24,7 +25,7 @@ rg -i "gsk_|sk-|api_key|password|BEGIN PRIVATE" --glob '!venv/**' --glob '!.git/
 Local token for `gh` is stored at `~/.config/gh/token` (not in this repo). Setup once:
 
 ```bash
-bash scripts/setup_github_auth.sh
+gh auth login
 ```
 
 ## Responsible use

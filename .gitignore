@@ -38,4 +38,15 @@ browser_config.json
 .idea/
 .vscode/
 *.swp
+
+# Graphify
 graphify-out/cache/
+graphify-out/*/
+
+# Personal / local-only (not part of NextMove product)
+career-profile/
+automation/
+assets/
+scripts/build_nakimov*
+scripts/build_nakimova*
+scripts/send_telegram_radar.py

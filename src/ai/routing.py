@@ -8,8 +8,6 @@ TASK_ROUTING: dict[str, str] = {
     "extract_skills": "ollama",
     "extract_skills_ru": "yandex",
     "categorize_vacancy": "ollama",
-    "analyze_resume_ru": "yandex",
-    "profile_gaps": "groq",
     "improve_resume": "yandex",
     "generate_cover_letter": "yandex",
     "generate_linkedin_outreach": "yandex",
