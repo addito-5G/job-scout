@@ -17,7 +17,8 @@ def extract_state(html: str) -> dict | None:
     )
     if not match:
         return None
-    return json.loads(match.group(1))
+    # hh.ru HTML-escapes quotes in the embedded JSON (&#34; …).
+    return json.loads(unescape(match.group(1)))
 
 
 def find_vacancy_list(obj: Any) -> list[dict] | None:

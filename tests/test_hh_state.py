@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from parsers.hh_state import find_vacancy_list, format_salary, parse_search_item
+from parsers.hh_state import extract_state, find_vacancy_list, format_salary, parse_search_item
 
 
 HH_SEARCH_ITEM = {
@@ -50,3 +50,14 @@ def test_find_vacancy_list_nested():
     assert found is not None
     assert len(found) == 2
     assert found[0]["vacancyId"] == 1
+
+
+def test_extract_state_unescapes_html_entities():
+    html = (
+        '<template id="HH-Lux-InitialState">'
+        '{&#34;page&#34;:{&#34;vacancies&#34;:[{&#34;vacancyId&#34;:9,&#34;name&#34;:&#34;PM&#34;}]}}'
+        "</template>"
+    )
+    state = extract_state(html)
+    assert state is not None
+    assert state["page"]["vacancies"][0]["vacancyId"] == 9

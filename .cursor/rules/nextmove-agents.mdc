@@ -1,0 +1,25 @@
+---
+description: Multi-agent zone ownership for NextMove (job-scout)
+alwaysApply: true
+---
+
+# NextMove agent zones
+
+When working in this repo, act as **one zone at a time**. Prefer the smallest change that ships.
+
+## Zones
+
+- **parser** — `src/adapters/`, `src/parsers/`, `config/sources.yaml`, enrich/scan fetch path
+- **data** — `src/db/`, alembic, vacancy/match repos, listing filters, dedupe
+- **ai** — `src/ai/`, task prompts, `routing.py`, fit/cover/resume services
+- **ui** — `ui/`, Streamlit pages/components
+- **ops** — scan schedule, `.cursor/mcp.json`, local Ollama wiring, scripts
+
+## Hard rules
+
+- Production HH scan uses the local InitialState parser (`hh_parser` + `hh_state`). Do not replace it with Firecrawl/Crawl4AI unless explicitly asked.
+- HTML-escaped HH JSON must be `html.unescape`d before `json.loads`.
+- AI provider choice lives in `src/ai/routing.py` (ollama / yandex / groq). Do not hardcode a single vendor in new features.
+- Prefer `graphify` for codebase navigation when available.
+- Keep MCP tool surface small (Playwright for browser debug; GitHub for PRs). Do not enable a large MCP zoo by default.
+- Do not commit secrets; use `.env` / example configs only.
