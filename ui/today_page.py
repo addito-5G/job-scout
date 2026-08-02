@@ -11,6 +11,7 @@ from ui.components import match_score_class
 from ui.data import cached_profile_id
 from ui.design_system import COLORS
 from ui.profile_filter import get_active_resume_profile_label
+from ui.scan_flash import render_scan_flash
 
 
 def _go(view: str, **kwargs) -> None:
@@ -23,6 +24,7 @@ def _go(view: str, **kwargs) -> None:
 
 
 def render_today() -> None:
+    render_scan_flash()
     profile_id = cached_profile_id()
 
     init_db()

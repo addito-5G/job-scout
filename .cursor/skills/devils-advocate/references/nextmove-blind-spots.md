@@ -6,7 +6,8 @@ Domain traps for vacancy scanning + AI career copilot.
 
 - HTML entity-escaped `HH-Lux-InitialState` (`&#34;`) → must `html.unescape` before JSON
 - Empty scan in ~seconds usually means parse/HTTP failure, not "no jobs" — check `adapter.errors` / UI
-- Missing `published_at` is **dropped** when `search_period > 0` (strict client filter)
+- Missing `published_at` after enrich: **kept** when HH request already used `search_period` (logged as `kept_undated`); dated rows older than window are skipped (`skipped_old`)
+- Filter runs only after optional detail enrich so card dates can fill in
 - Missing `search_period` on cached queries is normalized to 7 on read
 - Rate limits / bot pages: captcha-form / «доступ ограничен» without InitialState
 - Detail enrich (`use_for_scan`) multiplies latency and ban risk

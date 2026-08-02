@@ -1,14 +1,16 @@
 ---
-description: Nudge adversarial challenge after non-trivial design/code
-alwaysApply: true
+description: >-
+  Offer @challenge / «поспорь» after architecture, scrape/parser, AI routing,
+  or schema designs. Do not use for typos or single-line edits.
+alwaysApply: false
 ---
 
 # Challenge nudge
 
-After finishing a **non-trivial** change (architecture, scrape/parser, AI routing, schema, multi-file design), end with one short line offering:
+When you just proposed or finished a **non-trivial** design (architecture, HH scrape/parser, AI routing, DB schema, multi-file redesign), end with one short line:
 
 `Могу @challenge / «поспорь» по этому решению.`
 
-Skip the nudge for tiny edits (typos, copy, single-line fixes) or when this turn already ran challenge/devils-advocate.
+Skip if this turn already ran challenge/devils-advocate.
 
-Do not block shipping on the nudge. Critic details: `.cursor/rules/challenge.mdc`, skill `devils-advocate`, canon prompts in `agents/CHALLENGE_PROMPTS.md`.
+Canon: `.cursor/rules/challenge.mdc`, skill `devils-advocate`, `agents/CHALLENGE_PROMPTS.md`.

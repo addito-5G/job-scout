@@ -26,7 +26,9 @@ def test_within_period_filters_old_vacancies():
     now = datetime.now(timezone.utc)
     assert adapter._within_period(now - timedelta(days=3), 7) is True
     assert adapter._within_period(now - timedelta(days=10), 7) is False
-    assert adapter._within_period(None, 7) is False
+    assert adapter.skipped_old == 1
+    assert adapter._within_period(None, 7) is True
+    assert adapter.kept_undated == 1
     assert adapter._within_period(None, 0) is True
 
 

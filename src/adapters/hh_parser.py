@@ -45,6 +45,8 @@ class HhParserAdapter:
         self.search_period = max(0, int(search_period))
         self.fetcher = fetcher
         self.errors: list[str] = []
+        self.skipped_old = 0
+        self.kept_undated = 0
         self.session = requests.Session()
         self.session.headers.update({"User-Agent": USER_AGENT, "Accept-Language": "ru-RU,ru;q=0.9"})
 
@@ -67,14 +69,20 @@ class HhParserAdapter:
         return params
 
     def _within_period(self, published_at: datetime | None, period_days: int) -> bool:
-        """Keep only vacancies inside the window. Missing published_at is dropped when filtering."""
+        """Client-side age filter. Undated rows are kept when HH already got search_period."""
         if period_days <= 0:
             return True
         if published_at is None:
-            return False
+            # HH URL already constrained by search_period; dropping undated loses valid cards
+            # when search snippets omit publicationTime and detail enrich failed/skipped.
+            self.kept_undated += 1
+            return True
         pub = published_at if published_at.tzinfo else published_at.replace(tzinfo=timezone.utc)
         cutoff = datetime.now(timezone.utc) - timedelta(days=period_days)
-        return pub >= cutoff
+        if pub >= cutoff:
+            return True
+        self.skipped_old += 1
+        return False
 
     def _fetch_html(self, url: str) -> str:
         if self.fetcher:
@@ -175,3 +183,10 @@ class HhParserAdapter:
                     )
 
                 time.sleep(self.delay_seconds)
+
+        if self.kept_undated or self.skipped_old:
+            logger.info(
+                "hh period filter: kept_undated=%s skipped_old=%s",
+                self.kept_undated,
+                self.skipped_old,
+            )

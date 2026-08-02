@@ -6,10 +6,10 @@ import time
 
 import streamlit as st
 
-
 from services.refresh_service import refresh_vacancies
 from services.scan_progress import label_for
 from ui.data import clear_data_cache
+from ui.scan_flash import store_scan_flash
 from ui.workflow import go_to
 
 
@@ -65,43 +65,26 @@ def run_parse_with_progress() -> None:
         sidebar_progress.progress(1.0, text=done_text)
         main_progress.progress(1.0, text=done_text)
         sidebar_timer.markdown("⏱ Прошло **готово**")
+
+        errors = list(result.errors or [])
+        store_scan_flash(
+            scraped=result.scraped,
+            new_count=result.new_count,
+            matched=result.matched,
+            errors=errors,
+        )
+
         st.session_state.app_unlocked = True
         go_to("app")
         if st.session_state.get("view") == "setup":
             st.session_state.view = "today"
-
-        errors = list(result.errors or [])
-        if result.scraped == 0 and errors:
-            st.error(
-                "Скан завершился без вакансий. Причины:\n\n- "
-                + "\n- ".join(e[:300] for e in errors[:5])
-            )
-            st.sidebar.error("0 вакансий — см. ошибки на странице")
-        elif result.scraped == 0:
-            st.warning(
-                "Скан завершился: **0** вакансий. Проверьте ключи поиска и период."
-            )
-            st.sidebar.warning("0 вакансий")
-        else:
-            st.success(
-                f"Собрано **{result.scraped}** вакансий (новых **{result.new_count}**). "
-                f"AI-матчинг: **{result.matched}** вакансий. "
-                f"Откройте «Сегодня» или «Возможности»."
-            )
-            st.sidebar.success(
-                f"Готово: {result.scraped} вакансий, новых {result.new_count}, "
-                f"матчинг {result.matched}"
-            )
-        if errors and result.scraped > 0:
-            st.warning(
-                "Частичные ошибки:\n\n- " + "\n- ".join(e[:300] for e in errors[:5])
-            )
         st.rerun()
     except Exception as exc:
+        store_scan_flash(scraped=0, new_count=0, matched=0, errors=[str(exc)])
         st.sidebar.error(f"Ошибка: {exc}")
-        st.error(f"Парсинг прерван: {exc}")
         go_to("app")
-        st.session_state.view = "dashboard"
+        st.session_state.view = "today"
+        st.rerun()
     finally:
         st.session_state.refresh_running = False
         st.session_state.pop("parse_started_at", None)

@@ -173,6 +173,16 @@ def run_scan(
             if err not in result.errors:
                 result.errors.append(err)
 
+        kept_undated = int(getattr(adapter, "kept_undated", 0) or 0)
+        skipped_old = int(getattr(adapter, "skipped_old", 0) or 0)
+        if kept_undated or skipped_old:
+            logger.info(
+                "%s period stats: kept_undated=%s skipped_old=%s",
+                adapter.name,
+                kept_undated,
+                skipped_old,
+            )
+
         result.by_source[adapter.name] = source_count
         if progress:
             progress(
