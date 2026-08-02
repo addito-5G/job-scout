@@ -192,9 +192,24 @@ def settings_to_queries_from_data(data: dict) -> list[dict]:
 def settings_to_queries(settings: SearchSettings) -> list[dict]:
     cached = _loads(settings.hh_queries_json, None)
     if cached:
-        return cached
+        return _normalize_hh_queries(cached)
     return settings_to_queries_from_data({
         "desired_titles": _loads(settings.desired_titles_json, []),
         "keywords_include": _loads(settings.keywords_include_json, []),
         "work_formats": _loads(settings.work_formats_json, []),
     })
+
+
+def _normalize_hh_queries(queries: list) -> list[dict]:
+    """Ensure cached DB queries always carry search_period (default 7 days)."""
+    out: list[dict] = []
+    if not isinstance(queries, list):
+        return out
+    for item in queries:
+        if not isinstance(item, dict):
+            continue
+        q = dict(item)
+        if "search_period" not in q:
+            q["search_period"] = 7
+        out.append(q)
+    return out

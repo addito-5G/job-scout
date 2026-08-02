@@ -26,4 +26,17 @@ def test_within_period_filters_old_vacancies():
     now = datetime.now(timezone.utc)
     assert adapter._within_period(now - timedelta(days=3), 7) is True
     assert adapter._within_period(now - timedelta(days=10), 7) is False
-    assert adapter._within_period(None, 7) is True
+    assert adapter._within_period(None, 7) is False
+    assert adapter._within_period(None, 0) is True
+
+
+def test_fetch_records_page_errors():
+    adapter = HhParserAdapter(queries=[{"text": "x"}], pages_per_query=1, delay_seconds=0)
+
+    def boom(_params, _page):
+        raise RuntimeError("boom")
+
+    adapter._fetch_page = boom  # type: ignore[method-assign]
+    assert list(adapter.fetch()) == []
+    assert adapter.errors
+    assert "boom" in adapter.errors[0]

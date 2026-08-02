@@ -168,6 +168,11 @@ def run_scan(
             result.errors.append(msg)
             logger.warning(msg)
 
+        adapter_errors = getattr(adapter, "errors", None) or []
+        for err in adapter_errors:
+            if err not in result.errors:
+                result.errors.append(err)
+
         result.by_source[adapter.name] = source_count
         if progress:
             progress(

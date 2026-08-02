@@ -1,0 +1,14 @@
+---
+description: Nudge adversarial challenge after non-trivial design/code
+alwaysApply: true
+---
+
+# Challenge nudge
+
+After finishing a **non-trivial** change (architecture, scrape/parser, AI routing, schema, multi-file design), end with one short line offering:
+
+`Могу @challenge / «поспорь» по этому решению.`
+
+Skip the nudge for tiny edits (typos, copy, single-line fixes) or when this turn already ran challenge/devils-advocate.
+
+Do not block shipping on the nudge. Critic details: `.cursor/rules/challenge.mdc`, skill `devils-advocate`, canon prompts in `agents/CHALLENGE_PROMPTS.md`.

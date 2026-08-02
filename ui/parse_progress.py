@@ -65,21 +65,37 @@ def run_parse_with_progress() -> None:
         sidebar_progress.progress(1.0, text=done_text)
         main_progress.progress(1.0, text=done_text)
         sidebar_timer.markdown("⏱ Прошло **готово**")
-        st.sidebar.success(
-            f"Готово: {result.scraped} вакансий, новых {result.new_count}, "
-            f"матчинг {result.matched}"
-        )
         st.session_state.app_unlocked = True
         go_to("app")
         if st.session_state.get("view") == "setup":
             st.session_state.view = "today"
-        st.success(
-            f"Собрано **{result.scraped}** вакансий (новых **{result.new_count}**). "
-            f"AI-матчинг: **{result.matched}** вакансий. "
-            f"Откройте «Сегодня» или «Возможности»."
-        )
-        if result.errors:
-            st.warning(f"Частичные ошибки: {result.errors[0][:200]}")
+
+        errors = list(result.errors or [])
+        if result.scraped == 0 and errors:
+            st.error(
+                "Скан завершился без вакансий. Причины:\n\n- "
+                + "\n- ".join(e[:300] for e in errors[:5])
+            )
+            st.sidebar.error("0 вакансий — см. ошибки на странице")
+        elif result.scraped == 0:
+            st.warning(
+                "Скан завершился: **0** вакансий. Проверьте ключи поиска и период."
+            )
+            st.sidebar.warning("0 вакансий")
+        else:
+            st.success(
+                f"Собрано **{result.scraped}** вакансий (новых **{result.new_count}**). "
+                f"AI-матчинг: **{result.matched}** вакансий. "
+                f"Откройте «Сегодня» или «Возможности»."
+            )
+            st.sidebar.success(
+                f"Готово: {result.scraped} вакансий, новых {result.new_count}, "
+                f"матчинг {result.matched}"
+            )
+        if errors and result.scraped > 0:
+            st.warning(
+                "Частичные ошибки:\n\n- " + "\n- ".join(e[:300] for e in errors[:5])
+            )
         st.rerun()
     except Exception as exc:
         st.sidebar.error(f"Ошибка: {exc}")

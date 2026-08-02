@@ -44,6 +44,7 @@ class HhParserAdapter:
         self.delay_seconds = delay_seconds
         self.search_period = max(0, int(search_period))
         self.fetcher = fetcher
+        self.errors: list[str] = []
         self.session = requests.Session()
         self.session.headers.update({"User-Agent": USER_AGENT, "Accept-Language": "ru-RU,ru;q=0.9"})
 
@@ -66,8 +67,11 @@ class HhParserAdapter:
         return params
 
     def _within_period(self, published_at: datetime | None, period_days: int) -> bool:
-        if period_days <= 0 or published_at is None:
+        """Keep only vacancies inside the window. Missing published_at is dropped when filtering."""
+        if period_days <= 0:
             return True
+        if published_at is None:
+            return False
         pub = published_at if published_at.tzinfo else published_at.replace(tzinfo=timezone.utc)
         cutoff = datetime.now(timezone.utc) - timedelta(days=period_days)
         return pub >= cutoff
@@ -85,6 +89,9 @@ class HhParserAdapter:
         html = self._fetch_html(url)
         state = extract_state(html)
         if not state:
+            lowered = html.lower()
+            if "доступ ограничен" in lowered or "captcha-form" in lowered:
+                raise RuntimeError(f"HH блок/captcha вместо выдачи: {url}")
             raise RuntimeError(f"Не удалось разобрать HH-Lux-InitialState: {url}")
         return find_vacancy_list(state) or []
 
@@ -105,7 +112,9 @@ class HhParserAdapter:
                 try:
                     items = self._fetch_page(params, page)
                 except Exception as exc:
-                    logger.warning("hh ошибка %s p%s: %s", params["text"], page, exc)
+                    msg = f"hh ошибка «{params['text']}» p{page}: {exc}"
+                    self.errors.append(msg)
+                    logger.warning(msg)
                     break
 
                 if not items:

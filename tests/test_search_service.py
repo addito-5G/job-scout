@@ -7,6 +7,7 @@ import json
 from db.tables import CandidateProfile
 from services.search_service import (
     _defaults_from_profile,
+    _normalize_hh_queries,
     settings_to_queries_from_data,
 )
 
@@ -38,3 +39,9 @@ def test_settings_to_queries_from_profile_titles():
     assert queries[0]["text"] == "Backend Developer"
     assert queries[0]["schedule"] == "remote"
     assert queries[0]["search_period"] == 7
+
+
+def test_normalize_hh_queries_injects_search_period():
+    normalized = _normalize_hh_queries([{"text": "PM", "area": 1}])
+    assert normalized[0]["search_period"] == 7
+    assert normalized[0]["text"] == "PM"

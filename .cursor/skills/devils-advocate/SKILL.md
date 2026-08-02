@@ -44,22 +44,23 @@ Also check AI failure modes: happy-path bias, scope acceptance, over-abstraction
 
 ## Output
 
-For each concern (max 7):
+Use the same severity buckets as `.cursor/rules/challenge.mdc`:
 
 ```
-Concern: …
-Severity: Critical | High | Medium
-What I see: …
-Why it matters: …
-What to do: …
+## FATAL (block)
+- …
+
+## WARN (fix before merge)
+- …
+
+## INFO (optional)
+- …
+
+## Verdict
+PROCEED | PAUSE | REDESIGN
 ```
 
-Then:
-
-```
-## FATAL / WARN / INFO
-## Verdict: PROCEED | PAUSE | REDESIGN
-```
+For each concern (max 7), also include Severity Critical|High|Medium and What to do.
 
 ## Do
 

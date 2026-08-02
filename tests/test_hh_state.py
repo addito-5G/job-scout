@@ -61,3 +61,12 @@ def test_extract_state_unescapes_html_entities():
     state = extract_state(html)
     assert state is not None
     assert state["page"]["vacancies"][0]["vacancyId"] == 9
+
+
+def test_extract_state_returns_none_on_broken_json():
+    html = '<template id="HH-Lux-InitialState">{&#34;broken</template>'
+    assert extract_state(html) is None
+
+
+def test_extract_state_returns_none_when_missing():
+    assert extract_state("<html>no state</html>") is None

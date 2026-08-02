@@ -3,22 +3,45 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 from datetime import datetime, timezone
 from html import unescape
 from typing import Any
 
+logger = logging.getLogger(__name__)
+
+_STATE_MARKER = 'id="HH-Lux-InitialState"'
+
 
 def extract_state(html: str) -> dict | None:
-    match = re.search(
-        r'id="HH-Lux-InitialState"[^>]*>(\{.*\})</template>',
-        html,
-        re.DOTALL,
-    )
-    if not match:
+    """Parse embedded HH Lux state. Returns None if missing or invalid JSON."""
+    start = html.find(_STATE_MARKER)
+    if start < 0:
         return None
-    # hh.ru HTML-escapes quotes in the embedded JSON (&#34; …).
-    return json.loads(unescape(match.group(1)))
+    gt = html.find(">", start)
+    if gt < 0:
+        return None
+    end = html.find("</template>", gt)
+    if end < 0:
+        match = re.search(
+            r'id="HH-Lux-InitialState"[^>]*>(\{.*?\})</template>',
+            html[start:],
+            re.DOTALL,
+        )
+        if not match:
+            return None
+        raw = match.group(1)
+    else:
+        raw = html[gt + 1 : end].strip()
+    if not raw.startswith("{"):
+        return None
+    try:
+        data = json.loads(unescape(raw))
+    except json.JSONDecodeError as exc:
+        logger.warning("HH-Lux-InitialState JSON broken: %s", exc)
+        return None
+    return data if isinstance(data, dict) else None
 
 
 def find_vacancy_list(obj: Any) -> list[dict] | None:

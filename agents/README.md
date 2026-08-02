@@ -20,6 +20,8 @@ It does **not** replace production services in `src/` — parsers, scan, match, 
 
 ## Roles (one agent = one zone)
 
+Invoke explicitly, e.g. «действуй как parser agent». Prompt files under `agents/prompts/` are the contract for that zone — they are not auto-loaded.
+
 | Role | Owns | Do not touch |
 |------|------|--------------|
 | `parser` | `src/adapters/`, `src/parsers/`, `config/sources.yaml` | UI layout, AI prompts |

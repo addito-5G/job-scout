@@ -5,9 +5,10 @@ Domain traps for vacancy scanning + AI career copilot.
 ## Scraping / HH
 
 - HTML entity-escaped `HH-Lux-InitialState` (`&#34;`) → must `html.unescape` before JSON
-- Empty scan in ~seconds usually means parse/HTTP failure, not "no jobs"
-- Missing `search_period` → noisy old inventory / wasted detail fetches
-- Rate limits / bot pages: captcha markers, missing InitialState
+- Empty scan in ~seconds usually means parse/HTTP failure, not "no jobs" — check `adapter.errors` / UI
+- Missing `published_at` is **dropped** when `search_period > 0` (strict client filter)
+- Missing `search_period` on cached queries is normalized to 7 on read
+- Rate limits / bot pages: captcha-form / «доступ ограничен» without InitialState
 - Detail enrich (`use_for_scan`) multiplies latency and ban risk
 - Replacing production parser with Firecrawl/Crawl4AI loses domain structure
 
