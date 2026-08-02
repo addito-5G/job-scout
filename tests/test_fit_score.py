@@ -94,6 +94,60 @@ def test_missing_skills_surface_as_gaps():
     assert any("Усилить" in g for g in result.gaps_to_improve)
 
 
+def test_must_have_penalty_when_core_skills_missing():
+    result = compute_fit(
+        profile_skills=["Product Manager", "Roadmap"],
+        profile_strengths=["Веду продукт"],
+        profile_weaknesses=[],
+        profile_domains=["B2B SaaS"],
+        profile_title="Product Manager",
+        profile_recommended_roles=["Product Manager"],
+        profile_experience_years=5,
+        vacancy_title="Product Manager",
+        vacancy_description=(
+            "Обязательно: SQL, Python, unit economics. "
+            "Будет плюсом: Figma."
+        ),
+        vacancy_skills=["SQL", "Python", "Unit economics"],
+        vacancy_experience_required="От 3 до 6 лет",
+    )
+    assert result.match_score < 65
+    assert any("обязательн" in r.lower() for r in result.risks) or any(
+        "обязательн" in g.lower() for g in result.gaps_to_improve
+    )
+
+
+def test_must_section_in_description_weighted_higher():
+    weak = compute_fit(
+        profile_skills=["Product Manager", "Roadmap", "Figma"],
+        profile_strengths=[],
+        profile_weaknesses=[],
+        profile_domains=[],
+        profile_title="Product Manager",
+        profile_recommended_roles=["Product Manager"],
+        profile_experience_years=4,
+        vacancy_title="Product Manager",
+        vacancy_description="Будет плюсом SQL. Нужен общий продуктовый опыт.",
+        vacancy_skills=["Roadmap"],
+        vacancy_experience_required="От 3 до 6 лет",
+    )
+    strong = compute_fit(
+        profile_skills=["Product Manager", "Roadmap", "SQL", "Python"],
+        profile_strengths=["SQL и Python в работе с метриками"],
+        profile_weaknesses=[],
+        profile_domains=["B2B SaaS"],
+        profile_title="Product Manager",
+        profile_recommended_roles=["Product Manager"],
+        profile_experience_years=4,
+        vacancy_title="Product Manager",
+        vacancy_description="Обязательно: SQL и Python. Roadmap.",
+        vacancy_skills=["SQL", "Python", "Roadmap"],
+        vacancy_experience_required="От 3 до 6 лет",
+    )
+    assert strong.match_score > weak.match_score
+
+
+
 def test_fit_to_match_dict_roundtrip():
     result = compute_fit(
         **_pm_profile(),

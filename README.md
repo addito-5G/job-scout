@@ -63,7 +63,7 @@ Pipeline: **scan (hh.ru) → enrich → fit score → cover letter**. Optional d
 1. Upload resume `.md` → `parse_resume` builds profile (skills, roles, salary range)
 2. AI suggests search settings (`suggest_filters`) — job titles, keywords, regions
 3. Scan pulls vacancies from **hh.ru**
-4. **Fit Score** (`domain/fit_score.py`) ranks each vacancy vs your profile — skills, role, experience, gaps
+4. **Fit Score** (`domain/fit_score.py`) ranks each vacancy vs your profile — weighted must/nice skills, role, experience, domain, evidence
 5. Cover letter + AI fit advice — AI drafts, you send manually
 
 ```mermaid
