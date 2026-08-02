@@ -125,7 +125,8 @@ def create_profile_from_resume(
     content: str,
     *,
     display_name: str,
-    filename: str = "resume.md",
+    filename: str = "resume.pdf",
+    source_bytes: bytes | None = None,
 ) -> tuple[CandidateProfile, AIResult]:
     """Создать новый изолированный профиль резюме (не перезаписывает существующие)."""
     name = display_name.strip()
@@ -134,11 +135,19 @@ def create_profile_from_resume(
 
     resumes_dir = config.ROOT / "data" / "resumes"
     resumes_dir.mkdir(parents=True, exist_ok=True)
-    safe_name = Path(filename).name or "resume.md"
-    if not safe_name.lower().endswith(".md"):
-        safe_name = f"{safe_name}.md"
-    path = resumes_dir / f"{_slug_name(name)}_{safe_name}"
-    path.write_text(content, encoding="utf-8")
+    safe_name = Path(filename).name or "resume.pdf"
+    stem = _slug_name(name)
+    path = resumes_dir / f"{stem}_{safe_name}"
+
+    if source_bytes is not None and safe_name.lower().endswith(".pdf"):
+        path.write_bytes(source_bytes)
+        # Рядом — извлечённый текст для отладки / повторного разбора без PDF.
+        path.with_suffix(".txt").write_text(content, encoding="utf-8")
+    else:
+        if Path(safe_name).suffix.lower() not in {".txt", ".md", ".pdf"}:
+            safe_name = f"{Path(safe_name).stem}.txt"
+            path = resumes_dir / f"{stem}_{safe_name}"
+        path.write_text(content, encoding="utf-8")
 
     profile_data, combined = _parse_resume_text(session, content)
     session.execute(update(CandidateProfile).values(is_active=False))
@@ -156,9 +165,16 @@ def parse_resume_upload(
     content: str,
     *,
     display_name: str,
-    filename: str = "resume.md",
+    filename: str = "resume.pdf",
+    source_bytes: bytes | None = None,
 ) -> tuple[CandidateProfile, AIResult]:
-    return create_profile_from_resume(session, content, display_name=display_name, filename=filename)
+    return create_profile_from_resume(
+        session,
+        content,
+        display_name=display_name,
+        filename=filename,
+        source_bytes=source_bytes,
+    )
 
 
 def parse_resume_file(
@@ -171,8 +187,21 @@ def parse_resume_file(
     path = Path(resume_path)
     if not path.exists():
         raise FileNotFoundError(f"Резюме не найдено: {path}")
-    resume_text = path.read_text(encoding="utf-8")
     label = display_name or path.stem
     if upsert:
         raise NotImplementedError("Обновление существующего профиля через parse_resume_file отключено")
+
+    if path.suffix.lower() == ".pdf":
+        from services.resume_pdf import extract_text_from_pdf_path
+
+        resume_text = extract_text_from_pdf_path(path)
+        return create_profile_from_resume(
+            session,
+            resume_text,
+            display_name=label,
+            filename=path.name,
+            source_bytes=path.read_bytes(),
+        )
+
+    resume_text = path.read_text(encoding="utf-8")
     return create_profile_from_resume(session, resume_text, display_name=label, filename=path.name)

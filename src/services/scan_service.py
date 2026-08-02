@@ -143,6 +143,10 @@ def run_scan(
                     logger.warning(msg)
                     continue
 
+                if vacancy_id <= 0:
+                    result.skipped_count += 1
+                    continue
+
                 if outcome == "new":
                     result.saved += 1
                     result.new_count += 1

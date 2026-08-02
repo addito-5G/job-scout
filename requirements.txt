@@ -19,6 +19,9 @@ cryptography>=42.0
 streamlit>=1.32
 plotly>=5.18
 
+# Resume PDF text extraction (no OCR)
+pymupdf>=1.24
+
 # Knowledge graph (agent navigation)
 graphifyy>=0.9
 

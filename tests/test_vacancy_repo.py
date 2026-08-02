@@ -85,6 +85,37 @@ def test_upsert_vacancy_creates_new(db_session: Session, profile: CandidateProfi
     assert row.profile_role == ROLE_PRODUCT_MANAGER
 
 
+def test_upsert_vacancy_recovers_from_url_conflict(db_session: Session, profile: CandidateProfile):
+    """Legacy UNIQUE(external_url): second insert with same URL must skip, not raise."""
+    from sqlalchemy import text
+
+    db_session.execute(
+        text("CREATE UNIQUE INDEX IF NOT EXISTS uq_vacancies_external_url ON vacancies(external_url)")
+    )
+    existing = Vacancy(
+        profile_id=profile.id,
+        source="hh",
+        external_id="old-id",
+        title="Existing",
+        external_url="https://hh.ru/vacancy/conflict",
+        scraped_at=utc_now(),
+        is_active=True,
+    )
+    db_session.add(existing)
+    db_session.commit()
+
+    dto = VacancyDTO(
+        source="hh",
+        external_id="new-id-same-url",
+        title="Incoming",
+        company="Acme",
+        url="https://hh.ru/vacancy/conflict",
+    )
+    vid, outcome = upsert_vacancy(db_session, dto, profile_id=profile.id)
+    assert outcome == "skipped"
+    assert vid == existing.id
+
+
 def test_upsert_vacancy_skips_existing(db_session: Session, profile: CandidateProfile):
     dto = VacancyDTO(
         source="hh",

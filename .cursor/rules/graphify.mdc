@@ -1,5 +1,5 @@
 ---
-description: graphify knowledge graph — ориентир по архитектуре job-scout / NextMove
+description: graphify knowledge graph — ВСЕГДА смотреть граф до кода и реализации
 alwaysApply: true
 ---
 
@@ -7,34 +7,37 @@ alwaysApply: true
 
 Knowledge graph: `graphify-out/` ([Graphify-Labs/graphify](https://github.com/Graphify-Labs/graphify)).
 
-Skill в проекте: `.agents/skills/graphify/SKILL.md`  
-Интерактивный граф: `graphify-out/graph.html` (локальный файл, не веб-URL на GitHub).
+Skill: `.agents/skills/graphify/SKILL.md`  
+Визуализация: `graphify-out/graph.html` (локальный файл).
 
-## Перед исследованием кода
+## Обязательный порядок (не пропускать)
 
-```bash
-# из корня репо, venv активирован
-graphify query "<вопрос>" --graph graphify-out/graph.json
-graphify path "A" "B" --graph graphify-out/graph.json
-graphify explain "<символ>" --graph graphify-out/graph.json
-```
+Перед **любой** задачей с кодом (багфикс, фича, рефакторинг, «где это?»):
 
-Читай `graphify-out/GRAPH_REPORT.md` для обзора (god nodes, communities, циклы).
+1. **Свежесть:** сравни `Built from commit` в `graphify-out/GRAPH_REPORT.md` с `git rev-parse HEAD`. Если граф устарел или нет `graph.json` → `graphify update .` (из корня, venv).
+2. **Запрос к графу** по сути задачи:
+   ```bash
+   graphify query "<вопрос>" --graph graphify-out/graph.json
+   graphify path "A" "B" --graph graphify-out/graph.json
+   graphify explain "<символ>" --graph graphify-out/graph.json
+   ```
+   Для обзора — `graphify-out/GRAPH_REPORT.md` (hubs, communities).
+3. **Только потом** `Read` / `Grep` / `Glob` / правка файлов — по путям и символам из графа.
 
-`Read` / `Grep` / `Glob` — после того, как граф указал файлы/символы.
+Нельзя начинать реализацию с «угадай файл через Grep», пока не спросил граф.  
+Исключение: чисто git/ops (`commit`, `push`, stop/start Streamlit) без изменения логики продукта.
 
-Если нет `graphify-out/graph.json`: `graphify update .`  
-После существенных правок кода: `graphify update .`
+После **существенных** правок кода: снова `graphify update .`.
 
 ## Карта проекта (hubs)
 
 | Область | Точки входа |
 |---------|-------------|
 | UI | `app.py`, `render_detail`, `navigation.py`, `data.py` |
-| Скан | `scan_service.py`, `HhParserAdapter`, `habr_parser`, `geekjob_parser`, `linkedin_jobs` |
+| Скан | `scan_service.py`, `HhParserAdapter`, `habr_parser`, `geekjob_parser` |
 | Матчинг | `fit_score.py`, `match_service.py`, `batch_fit_match` |
 | AI | `AIRouter`, `task_prompts.py`, `vacancy_fit_advice`, `cover_letter_service` |
-| Профиль | `CandidateProfile`, `profile_service.py`, `search_service.py` |
+| Профиль | `CandidateProfile`, `profile_service.py`, `search_service.py`, `resume_pdf.py` |
 | БД | `init_db`, `session_scope`, `vacancy_repo.py`, `Vacancy`, `VacancyMatch` |
 
 Карьерный профиль (отдельный граф): `career-profile/graphify-out/`.

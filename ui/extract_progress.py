@@ -15,7 +15,8 @@ from ui.workflow import go_to
 
 def run_extract_with_progress() -> None:
     content = st.session_state.get("pending_resume_content", "")
-    filename = st.session_state.get("pending_resume_filename", "resume.md")
+    filename = st.session_state.get("pending_resume_filename", "resume.pdf")
+    source_bytes = st.session_state.get("pending_resume_bytes")
     display_name = st.session_state.get("pending_profile_display_name", "").strip()
 
     st.markdown("## Извлекаем ключи из резюме")
@@ -54,6 +55,7 @@ def run_extract_with_progress() -> None:
                 content,
                 display_name=display_name,
                 filename=filename,
+                source_bytes=source_bytes,
                 progress=on_progress,
             )
             profile_title = profile.display_name or profile.title or profile.full_name or "профиль"
@@ -73,6 +75,7 @@ def run_extract_with_progress() -> None:
         st.session_state.extract_running = False
         st.session_state.pop("pending_resume_content", None)
         st.session_state.pop("pending_resume_filename", None)
+        st.session_state.pop("pending_resume_bytes", None)
         st.session_state.pop("pending_profile_display_name", None)
         st.rerun()
     except Exception as exc:

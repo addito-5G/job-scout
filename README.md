@@ -8,7 +8,7 @@
 [![Streamlit](https://img.shields.io/badge/UI-Streamlit-FF4B4B.svg)](https://streamlit.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-> Personal job-search assistant for **any role**. Upload your resume (`.md`) — AI builds a candidate profile, generates search keywords for **hh.ru**, and ranks vacancies against **your** background. GitHub repo: [`job-scout`](https://github.com/addito-5G/job-scout). UI brand: **NextMove**. Not SaaS, not mass auto-apply — analysis, prioritization, and application materials with you in the loop.
+> Personal job-search assistant for **any role**. Upload your resume (`.pdf`) — AI builds a candidate profile, generates search keywords for **hh.ru**, and ranks vacancies against **your** background. GitHub repo: [`job-scout`](https://github.com/addito-5G/job-scout). UI brand: **NextMove**. Not SaaS, not mass auto-apply — analysis, prioritization, and application materials with you in the loop.
 
 **Core question:** *what should I do today to maximize my chances of getting an offer?*
 
@@ -60,7 +60,7 @@ Pipeline: **scan (hh.ru) → enrich → fit score → cover letter**. Optional d
 
 **Any resume → your search strategy → your matches.** No hardcoded role: developer, designer, analyst, PM — the pipeline adapts to what AI extracts from your CV.
 
-1. Upload resume `.md` → `parse_resume` builds profile (skills, roles, salary range)
+1. Upload resume `.pdf` (or paste text) → `parse_resume` builds profile (skills, roles, salary range)
 2. AI suggests search settings (`suggest_filters`) — job titles, keywords, regions
 3. Scan pulls vacancies from **hh.ru**
 4. **Fit Score** (`domain/fit_score.py`) ranks each vacancy vs your profile — weighted must/nice skills, role, experience, domain, evidence
@@ -68,7 +68,7 @@ Pipeline: **scan (hh.ru) → enrich → fit score → cover letter**. Optional d
 
 ```mermaid
 flowchart LR
-    R[Resume .md] --> P[Candidate profile]
+    R[Resume .pdf] --> P[Candidate profile]
     P --> S[Search settings]
     HH[hh.ru] --> SC[Scan service]
     SC --> DB[(SQLite + Alembic)]
@@ -134,7 +134,7 @@ Minimum for a useful run:
 | `YC_FOLDER_ID`, `YC_KEY_PATH` | YandexGPT cover letters |
 | `CONTACT_PHONE`, `CONTACT_TELEGRAM`, `CONTACT_LINKEDIN` | Signature in letters |
 | `DATABASE_URL` | SQLite path (default `sqlite:///./data/vacancies.db`) |
-| `RESUME_PATH` | Path to your resume `.md` |
+| `RESUME_PATH` | Path to your resume `.pdf` / `.md` / `.txt` |
 
 Full list: [`.env.example`](.env.example).
 

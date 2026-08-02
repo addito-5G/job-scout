@@ -39,7 +39,7 @@ USAGE_WARN_THRESHOLD = float(os.getenv("USAGE_WARN_THRESHOLD", "0.8"))
 
 # Resume test path (Obsidian)
 DEFAULT_RESUME_PATH = os.path.expanduser(
-    os.getenv("RESUME_PATH", "~/Documents/resume.md")
+    os.getenv("RESUME_PATH", "~/Documents/resume.pdf")
 )
 
 # Контакты для подписи в сопроводительных письмах (подставляются автоматически)

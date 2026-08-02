@@ -59,6 +59,8 @@ def reset_to_input() -> None:
     st.session_state.keys_extracted = False
     st.session_state.pop("search_draft", None)
     st.session_state.pop("resume_paste", None)
+    st.session_state.pop("onboard_file", None)
+    st.session_state.pop("pending_resume_bytes", None)
     st.session_state.pop("processed_resume_id", None)
     for key in list(st.session_state.keys()):
         if key.startswith("kw_") or key.startswith("add_") or key.startswith("del_"):

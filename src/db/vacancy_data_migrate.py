@@ -16,7 +16,7 @@ def sqlite_database_path() -> Path:
 
 
 def migrate_vacancy_rows(conn: sqlite3.Connection) -> dict[str, int]:
-    """Нормализовать source/work_format и добавить UNIQUE(source, external_id)."""
+    """Нормализовать source/work_format; uniqueness is per (profile_id, source, external_id)."""
     stats = {"rows": 0, "normalized_sources": 0, "work_format_filled": 0}
 
     if "vacancies" not in {
@@ -58,11 +58,12 @@ def migrate_vacancy_rows(conn: sqlite3.Connection) -> dict[str, int]:
     conn.commit()
 
     indexes = {row[1] for row in conn.execute("PRAGMA index_list(vacancies)").fetchall()}
-    if "uq_vacancy_source_external" not in indexes:
+    cols = {row[1] for row in conn.execute("PRAGMA table_info(vacancies)")}
+    if "profile_id" in cols and "uq_vacancy_profile_source_external" not in indexes:
         conn.execute(
             """
-            CREATE UNIQUE INDEX IF NOT EXISTS uq_vacancy_source_external
-            ON vacancies(source, external_id)
+            CREATE UNIQUE INDEX IF NOT EXISTS uq_vacancy_profile_source_external
+            ON vacancies(profile_id, source, external_id)
             """
         )
         conn.commit()

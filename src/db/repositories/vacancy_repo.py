@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from datetime import datetime, timedelta
 
 from sqlalchemy import func, not_, or_, select
@@ -20,6 +21,8 @@ from db.models import Company, Skill, Vacancy, VacancyMatch, VacancySkill, Vacan
 from db.normalize import normalize_source, normalize_work_format, normalize_experience, parse_datetime
 from models import Vacancy as VacancyDTO
 from time_utils import utc_now
+
+logger = logging.getLogger(__name__)
 
 
 def _json_dump(data) -> str | None:
@@ -142,16 +145,66 @@ def upsert_vacancy(
         return row.id, "new"
     except IntegrityError:
         session.rollback()
-        existing = session.execute(
-            select(Vacancy).where(
-                Vacancy.profile_id == profile_id,
-                Vacancy.source == source,
-                Vacancy.external_id == external_id,
-            )
-        ).scalar_one_or_none()
+        existing = _find_existing_vacancy(
+            session,
+            profile_id=profile_id,
+            source=source,
+            external_id=external_id,
+            external_url=external_url,
+        )
         if existing:
             return existing.id, "skipped"
-        raise
+        # Should be rare after schema migration; never surface raw IntegrityError to UI.
+        logger.warning(
+            "vacancy upsert conflict unresolved profile=%s source=%s id=%s url=%s",
+            profile_id,
+            source,
+            external_id,
+            external_url,
+        )
+        return 0, "skipped"
+
+
+def _find_existing_vacancy(
+    session: Session,
+    *,
+    profile_id: int,
+    source: str,
+    external_id: str,
+    external_url: str,
+) -> Vacancy | None:
+    existing = session.execute(
+        select(Vacancy).where(
+            Vacancy.profile_id == profile_id,
+            Vacancy.source == source,
+            Vacancy.external_id == external_id,
+        )
+    ).scalar_one_or_none()
+    if existing:
+        return existing
+    existing = session.execute(
+        select(Vacancy).where(
+            Vacancy.profile_id == profile_id,
+            Vacancy.external_url == external_url,
+        )
+    ).scalar_one_or_none()
+    if existing:
+        return existing
+    # Legacy global unique(source, external_id) / unique(url) rows without matching profile lookup.
+    existing = session.execute(
+        select(Vacancy).where(
+            Vacancy.source == source,
+            Vacancy.external_id == external_id,
+        )
+    ).scalar_one_or_none()
+    if existing and existing.profile_id == profile_id:
+        return existing
+    existing = session.execute(
+        select(Vacancy).where(Vacancy.external_url == external_url)
+    ).scalar_one_or_none()
+    if existing and existing.profile_id == profile_id:
+        return existing
+    return None
 
 
 def get_vacancy_by_id(session: Session, vacancy_id: int) -> Vacancy | None:
