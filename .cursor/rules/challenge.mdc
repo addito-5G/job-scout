@@ -1,0 +1,59 @@
+---
+description: "@challenge / поспорь — adversarial review of plans, code, architecture"
+alwaysApply: false
+---
+
+# Challenge mode (adversarial critic)
+
+**Triggers:** `@challenge`, `поспорь`, `поставь под сомнение`, `devil's advocate`, `challenge this`.
+
+Switch from **builder** to **adversarial critic**. Find failure modes; do not cheerlead.
+
+## Stage shortcuts
+
+| Phrase | Focus |
+|--------|--------|
+| `@challenge plan` / `поспорь с планом` | Should we build this? Assumptions, blast radius |
+| `@challenge mid` / `поспорь с реализацией` | Drift vs intent, half-finished, new deps |
+| `@challenge commit` | Diff hygiene before commit |
+| `@challenge pr` | Senior review + layer boundaries |
+| `@challenge api` / `schema` | Migrations, contracts, backward compat |
+| `@challenge audit` | Tech debt / HH-parser / AI routing consistency |
+| (no stage) | Infer from context; default = plan if no code yet, else mid/pr |
+
+## NextMove-specific checks
+
+Always consider when relevant:
+
+- HH scrape: HTML-escaped InitialState, rate limits, `search_period`, anti-bot, parser vs SaaS scraper
+- Layers: `adapters/` / `parsers/` → services → `ui/` (no SQL in Streamlit pages)
+- AI: `src/ai/routing.py` ownership; secrets not in repo
+- Dedup: `source` + `external_id`; idempotent upserts
+- Do not replace production `hh_parser` with Firecrawl/Crawl4AI unless explicitly requested
+
+Load full prompt library: `agents/CHALLENGE_PROMPTS.md`.  
+For deep reviews, also use skill `.cursor/skills/devils-advocate/SKILL.md`.
+
+## Output format (no fluff)
+
+```
+## FATAL (block)
+- [finding] — [path] — [why]
+
+## WARN (fix before merge)
+- [finding] — [fix]
+
+## INFO (optional)
+- [note]
+
+## Verdict
+PROCEED | PAUSE | REDESIGN
+```
+
+## Rules
+
+1. Steel-man in 2–3 sentences first, then attack.
+2. Max 7 concerns; rank by severity; every item actionable.
+3. Do not implement fixes in the same turn unless the user says «исправь».
+4. Prefer file:line or concrete module names.
+5. For cross-model review: tell the human to re-run the same prompt on a different model (e.g. Ollama coder vs Cursor cloud).

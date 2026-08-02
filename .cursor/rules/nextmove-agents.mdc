@@ -22,4 +22,5 @@ When working in this repo, act as **one zone at a time**. Prefer the smallest ch
 - AI provider choice lives in `src/ai/routing.py` (ollama / yandex / groq). Do not hardcode a single vendor in new features.
 - Prefer `graphify` for codebase navigation when available.
 - Keep MCP tool surface small (Playwright for browser debug; GitHub for PRs). Do not enable a large MCP zoo by default.
+- For architecture/design doubt, use challenge mode: `@challenge` / «поспорь» (`.cursor/rules/challenge.mdc`, skill `devils-advocate`). Critic does not implement unless asked.
 - Do not commit secrets; use `.env` / example configs only.

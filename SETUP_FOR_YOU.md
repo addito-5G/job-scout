@@ -37,8 +37,12 @@ GitHub MCP у тебя уже есть глобально — его трога�
 - `Действуй как ai agent` — промпты / routing
 - `Действуй как ui agent` — Streamlit
 
-Файлы ролей: `agents/prompts/`.  
-Правило зон уже в `.cursor/rules/nextmove-agents.mdc`.
+Или **критик** (это то, что реально спорит с решениями):
+
+- `поспорь с этим` / `@challenge`
+- `@challenge plan` · `@challenge mid` · `@challenge commit` · `@challenge pr`
+
+Файлы: `agents/prompts/`, `agents/CHALLENGE_PROMPTS.md`, skill `.cursor/skills/devils-advocate/`.
 
 Production-скан по-прежнему: Streamlit → Scan (не Crawl4AI).
 

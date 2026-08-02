@@ -40,9 +40,20 @@ It does **not** replace production services in `src/` — parsers, scan, match, 
 
 ## Related Cursor files
 
-- Rules: `.cursor/rules/`
+- Rules: `.cursor/rules/` (`nextmove-agents.mdc`, `challenge.mdc`, `graphify.mdc`)
+- Critic skill: `.cursor/skills/devils-advocate/`
+- Challenge prompts: `agents/CHALLENGE_PROMPTS.md`
 - MCP example: `.cursor/mcp.json.example`
 - Code graph: `graphify-out/` + `.cursor/rules/graphify.mdc`
+
+## Adversarial review (use this)
+
+In chat:
+
+- `поспорь с этим` / `@challenge`
+- `@challenge plan` · `@challenge mid` · `@challenge commit` · `@challenge pr`
+
+The agent must switch to critic mode (steel-man → attack → verdict). It should **not** auto-fix unless you say «исправь».
 
 ## What not to adopt as core
 
